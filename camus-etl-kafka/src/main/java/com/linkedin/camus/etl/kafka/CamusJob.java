@@ -1,55 +1,23 @@
 package com.linkedin.camus.etl.kafka;
 
-import com.linkedin.camus.etl.kafka.common.DateUtils;
-import com.linkedin.camus.etl.kafka.common.EtlCounts;
-import com.linkedin.camus.etl.kafka.common.EtlKey;
-import com.linkedin.camus.etl.kafka.common.ExceptionWritable;
-import com.linkedin.camus.etl.kafka.common.Source;
+import com.linkedin.camus.etl.kafka.common.*;
 import com.linkedin.camus.etl.kafka.mapred.EtlInputFormat;
 import com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.TreeMap;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
+import com.meituan.hadoop.SecurityUtils;
+import org.apache.commons.cli.*;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.PosixParser;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.filecache.DistributedCache;
-import org.apache.hadoop.fs.ContentSummary;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.mapred.JobID;
-import org.apache.hadoop.mapred.TIPStatus;
 import org.apache.hadoop.mapred.TaskCompletionEvent;
 import org.apache.hadoop.mapred.TaskReport;
-import org.apache.hadoop.mapreduce.Counter;
-import org.apache.hadoop.mapreduce.CounterGroup;
+import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.Counters;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -64,12 +32,21 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
 
+import java.io.*;
+import java.net.URISyntaxException;
+import java.security.PrivilegedAction;
+import java.text.NumberFormat;
+import java.util.*;
+import java.util.Map.Entry;
+
 public class CamusJob extends Configured implements Tool {
 
 	public static final String ETL_EXECUTION_BASE_PATH = "etl.execution.base.path";
 	public static final String ETL_EXECUTION_HISTORY_PATH = "etl.execution.history.path";
 	public static final String ETL_COUNTS_PATH = "etl.counts.path";
 	public static final String ETL_KEEP_COUNT_FILES = "etl.keep.count.files";
+  public static final String ETL_OUTPUT_FILE_DATETIME_FORMAT = "etl.output.file.datetime.format";
+  public static final String ETL_DEFAULT_TIMEZONE = "etl.default.timezone";
 	public static final String ETL_EXECUTION_HISTORY_MAX_OF_QUOTA = "etl.execution.history.max.of.quota";
 	public static final String ZK_AUDIT_HOSTS = "zookeeper.audit.hosts";
 	public static final String KAFKA_MONITOR_TIER = "kafka.monitor.tier";
@@ -256,8 +233,9 @@ public class CamusJob extends Configured implements Tool {
 		// be written to this directory. data is not written to the
 		// output directory in a normal run, but instead written to the
 		// appropriate date-partitioned subdir in camus.destination.path
+    String dateTimeFormatStr = props.getProperty(ETL_OUTPUT_FILE_DATETIME_FORMAT, "YYYYMMddHH");
 		DateTimeFormatter dateFmt = DateUtils.getDateTimeFormatter(
-				"YYYY-MM-dd-HH-mm-ss", DateTimeZone.UTC);
+				dateTimeFormatStr, DateTimeZone.forID(props.getProperty(ETL_DEFAULT_TIMEZONE, "Asia/Shanghai")));
 		Path newExecutionOutput = new Path(execBasePath,
 				new DateTime().toString(dateFmt));
 		FileOutputFormat.setOutputPath(job, newExecutionOutput);
@@ -558,8 +536,21 @@ public class CamusJob extends Configured implements Tool {
 	}
 
 	public static void main(String[] args) throws Exception {
-		CamusJob job = new CamusJob();
-		ToolRunner.run(job, args);
+
+    final String[] allArgs = args;
+    SecurityUtils.doAs("hadoop-data/_HOST@SANKUAI.COM", "/etc/hadoop/keytabs/hadoop-data.keytab",
+            null, new PrivilegedAction<Object>() {
+      @Override
+      public Object run() {
+        CamusJob job = new CamusJob();
+        try {
+          ToolRunner.run(job, allArgs);
+        } catch (Exception e) {
+          e.printStackTrace(System.err);
+        }
+        return null;
+      }
+    });
 	}
 
 	@SuppressWarnings("static-access")

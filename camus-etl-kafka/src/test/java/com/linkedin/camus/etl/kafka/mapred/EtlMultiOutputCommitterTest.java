@@ -7,7 +7,6 @@ import com.linkedin.camus.etl.kafka.coders.DefaultPartitioner;
 import com.linkedin.camus.etl.kafka.common.DateUtils;
 import com.linkedin.camus.etl.kafka.common.EtlKey;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.junit.After;
@@ -16,9 +15,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 
 public class EtlMultiOutputCommitterTest implements Partitioner {
 
@@ -31,7 +28,7 @@ public class EtlMultiOutputCommitterTest implements Partitioner {
     public void setup() throws IOException {
         configuration = new Configuration();
         configuration.set(EtlMultiOutputFormat.ETL_DEFAULT_PARTITIONER_CLASS, "com.linkedin.camus.etl.kafka.coders.DefaultPartitioner");
-        taskAttemptContext = new TaskAttemptContext(configuration, new TaskAttemptID());
+//        taskAttemptContext = new TaskAttemptContext(configuration, new TaskAttemptID());
         etlMultiOutputFormat = new EtlMultiOutputFormat();
         committer = (EtlMultiOutputFormat.EtlMultiOutputCommitter) etlMultiOutputFormat.getOutputCommitter(taskAttemptContext);
     }
