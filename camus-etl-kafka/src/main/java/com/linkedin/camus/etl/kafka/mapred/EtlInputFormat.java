@@ -41,6 +41,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 	public static final String KAFKA_CLIENT_BUFFER_SIZE = "kafka.client.buffer.size";
 	public static final String KAFKA_CLIENT_SO_TIMEOUT = "kafka.client.so.timeout";
+  public static final String KAFKA_BEGIN_TIMESTAMP = "kafka.begin.timestamp";
 
 	public static final String KAFKA_MAX_PULL_HRS = "kafka.max.pull.hrs";
 	public static final String KAFKA_MAX_PULL_MINUTES_PER_TASK = "kafka.max.pull.minutes.per.task";
@@ -134,6 +135,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 					kafka.api.OffsetRequest.EarliestTime(), 1);
 			Map<TopicAndPartition, PartitionOffsetRequestInfo> latestOffsetInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
 			Map<TopicAndPartition, PartitionOffsetRequestInfo> earliestOffsetInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
+      Map<TopicAndPartition, PartitionOffsetRequestInfo> currentOffsetInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
 			ArrayList<TopicAndPartition> topicAndPartitions = offsetRequestInfo
 					.get(leader);
 			for (TopicAndPartition topicAndPartition : topicAndPartitions) {
@@ -141,6 +143,14 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 						partitionLatestOffsetRequestInfo);
 				earliestOffsetInfo.put(topicAndPartition,
 						partitionEarliestOffsetRequestInfo);
+        // specific offset
+        String topic = topicAndPartition.topic();
+        long customBeginTimestamp = getCustomBeginTimestamp(topic, context);
+        if(customBeginTimestamp > 0){
+          log.info(String.format("Topic: [%s], CustomBeginTimestamp: [%d]", topic, customBeginTimestamp));
+          PartitionOffsetRequestInfo partitionCurrentOffsetRequestInfo = new PartitionOffsetRequestInfo(customBeginTimestamp, 1);
+          currentOffsetInfo.put(topicAndPartition, partitionCurrentOffsetRequestInfo);
+        }
 			}
 
 			OffsetResponse latestOffsetResponse = consumer
@@ -151,6 +161,11 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 					.getOffsetsBefore(new OffsetRequest(earliestOffsetInfo,
 							kafka.api.OffsetRequest.CurrentVersion(), CamusJob
 									.getKafkaClientName(context)));
+      OffsetResponse currentOffsetResponse = consumer
+          .getOffsetsBefore(new OffsetRequest(currentOffsetInfo,
+                  kafka.api.OffsetRequest.CurrentVersion(),
+                  CamusJob.getKafkaClientName(context)));
+
 			consumer.close();
 			for (TopicAndPartition topicAndPartition : topicAndPartitions) {
 				long latestOffset = latestOffsetResponse.offsets(
@@ -159,17 +174,45 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 				long earliestOffset = earliestOffsetResponse.offsets(
 						topicAndPartition.topic(),
 						topicAndPartition.partition())[0];
+        long currentOffset = 0;
+        if(currentOffsetInfo.containsKey(topicAndPartition)){
+          long[] offsets = currentOffsetResponse.offsets(topicAndPartition.topic(), topicAndPartition.partition());
+          if(offsets != null && offsets.length > 0){
+            currentOffset = offsets[0];
+            log.info(String.format("topic: [%s], partition: [%s], current offset: [%d]", topicAndPartition.topic(), topicAndPartition.partition(), currentOffset));
+          }
+        }
+
 				EtlRequest etlRequest = new EtlRequest(context,
 						topicAndPartition.topic(), Integer.toString(leader
 								.getLeaderId()), topicAndPartition.partition(),
 						leader.getUri());
 				etlRequest.setLatestOffset(latestOffset);
 				etlRequest.setEarliestOffset(earliestOffset);
+        etlRequest.setOffset(currentOffset);
 				finalRequests.add(etlRequest);
 			}
 		}
 		return finalRequests;
 	}
+
+  private long getCustomBeginTimestamp(String topic, JobContext context){
+    String customBeginTimestamp = context.getConfiguration().get(KAFKA_BEGIN_TIMESTAMP + "." + topic);
+    if(customBeginTimestamp == null){
+      customBeginTimestamp = context.getConfiguration().get(KAFKA_BEGIN_TIMESTAMP);
+    }
+
+    if(customBeginTimestamp != null){
+      try{
+        return Long.parseLong(customBeginTimestamp);
+      }catch(Exception ex){
+        log.warn(String.format("Parse customBeginTimestamp: [%s] failed, topic: [%s] ", customBeginTimestamp, topic));
+        return 0;
+      }
+    }
+
+    return 0;
+  }
 
 	public String createTopicRegEx(HashSet<String> topicsSet) {
 		String regex = "";
@@ -306,7 +349,9 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 			EtlKey key = offsetKeys.get(request);
 
-			if (key != null) {
+      // use previous offset when current offset is the default value 0
+			if (key != null && request.getOffset() <= 0) {
+        log.info("Current offset is set to previous offset: " + key.getOffset());
 				request.setOffset(key.getOffset());
 			}
 
