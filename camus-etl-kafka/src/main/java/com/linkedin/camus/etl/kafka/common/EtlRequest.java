@@ -206,17 +206,27 @@ public class EtlRequest implements Writable {
                 + getLastOffset();
     }
 
-    @Override
-    public int hashCode() {
-        return (partition + topic).hashCode();
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof EtlRequest)) return false;
 
-    @Override
-    public boolean equals(Object other) {
-        return this.hashCode() == other.hashCode();
-    }
+    EtlRequest that = (EtlRequest) o;
 
-    /**
+    if (partition != that.partition) return false;
+    if (!topic.equals(that.topic)) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = topic.hashCode();
+    result = 31 * result + partition;
+    return result;
+  }
+
+  /**
      * Returns the copy of KafkaETLRequest
      */
     @Override
