@@ -45,8 +45,8 @@ public class CamusJob extends Configured implements Tool {
 	public static final String ETL_EXECUTION_HISTORY_PATH = "etl.execution.history.path";
 	public static final String ETL_COUNTS_PATH = "etl.counts.path";
 	public static final String ETL_KEEP_COUNT_FILES = "etl.keep.count.files";
-  public static final String ETL_OUTPUT_FILE_DATETIME_FORMAT = "etl.output.file.datetime.format";
-  public static final String ETL_DEFAULT_TIMEZONE = "etl.default.timezone";
+    public static final String ETL_OUTPUT_FILE_DATETIME_FORMAT = "etl.output.file.datetime.format";
+    public static final String ETL_DEFAULT_TIMEZONE = "etl.default.timezone";
 	public static final String ETL_EXECUTION_HISTORY_MAX_OF_QUOTA = "etl.execution.history.max.of.quota";
 	public static final String ZK_AUDIT_HOSTS = "zookeeper.audit.hosts";
 	public static final String KAFKA_MONITOR_TIER = "kafka.monitor.tier";
@@ -233,7 +233,7 @@ public class CamusJob extends Configured implements Tool {
 		// be written to this directory. data is not written to the
 		// output directory in a normal run, but instead written to the
 		// appropriate date-partitioned subdir in camus.destination.path
-    String dateTimeFormatStr = props.getProperty(ETL_OUTPUT_FILE_DATETIME_FORMAT, "YYYYMMddHHMM");
+        String dateTimeFormatStr = props.getProperty(ETL_OUTPUT_FILE_DATETIME_FORMAT, "YYYY-MM-dd-HH-mm-ss");
 		DateTimeFormatter dateFmt = DateUtils.getDateTimeFormatter(
 				dateTimeFormatStr, DateTimeZone.forID(props.getProperty(ETL_DEFAULT_TIMEZONE, "Asia/Shanghai")));
 		Path newExecutionOutput = new Path(execBasePath,
@@ -535,23 +535,10 @@ public class CamusJob extends Configured implements Tool {
 		}
 	}
 
-	public static void main(String[] args) throws Exception {
-
-    final String[] allArgs = args;
-    SecurityUtils.doAs("hadoop-data/_HOST@SANKUAI.COM", "/etc/hadoop/keytabs/hadoop-data.keytab",
-            null, new PrivilegedAction<Object>() {
-      @Override
-      public Object run() {
-        CamusJob job = new CamusJob();
-        try {
-          ToolRunner.run(job, allArgs);
-        } catch (Exception e) {
-          e.printStackTrace(System.err);
-        }
-        return null;
-      }
-    });
-	}
+  public static void main(String[] args) throws Exception {
+    CamusJob job = new CamusJob();
+    ToolRunner.run(job, args);
+  }
 
 	@SuppressWarnings("static-access")
 	@Override
