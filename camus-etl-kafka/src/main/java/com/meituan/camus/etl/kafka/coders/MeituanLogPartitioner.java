@@ -1,4 +1,4 @@
-package com.linkedin.camus.etl.kafka.coders;
+package com.meituan.camus.etl.kafka.coders;
 
 import com.linkedin.camus.coders.Partitioner;
 import com.linkedin.camus.etl.IEtlKey;
@@ -6,7 +6,6 @@ import com.linkedin.camus.etl.kafka.common.DateUtils;
 import com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
 
