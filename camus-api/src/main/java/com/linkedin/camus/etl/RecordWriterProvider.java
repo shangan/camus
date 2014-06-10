@@ -12,7 +12,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
  */
 public interface RecordWriterProvider {
 
-    String getFilenameExtension();
+    String getFilenameExtension(TaskAttemptContext context);
 
     RecordWriter<IEtlKey, CamusWrapper> getDataRecordWriter(
             TaskAttemptContext context, String fileName, CamusWrapper data, FileOutputCommitter committer) throws IOException,

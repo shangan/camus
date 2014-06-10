@@ -34,6 +34,11 @@
 				<artifactId>camus-etl-kafka</artifactId>
 				<version>0.1.0-SNAPSHOT</version>
 			</dependency>
+            <dependency>
+                <groupId>com.linkedin.camus</groupId>
+                <artifactId>camus-meituan</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
 			<dependency>
 				<groupId>com.linkedin.camus</groupId>
 				<artifactId>camus-schema-registry</artifactId>
@@ -116,7 +121,8 @@
 		<module>camus-schema-registry</module>
 		<module>camus-schema-registry-avro</module>
 		<module>camus-example</module>
-	</modules>
+        <module>camus-meituan</module>
+    </modules>
 
 	<licenses>
 		<license>

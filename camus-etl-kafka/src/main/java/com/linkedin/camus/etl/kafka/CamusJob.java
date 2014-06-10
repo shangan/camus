@@ -41,12 +41,13 @@ import java.util.Map.Entry;
 
 public class CamusJob extends Configured implements Tool {
 
+  public static final String CAMUS_JOB_NAME = "camus.job.name";
 	public static final String ETL_EXECUTION_BASE_PATH = "etl.execution.base.path";
 	public static final String ETL_EXECUTION_HISTORY_PATH = "etl.execution.history.path";
 	public static final String ETL_COUNTS_PATH = "etl.counts.path";
 	public static final String ETL_KEEP_COUNT_FILES = "etl.keep.count.files";
-    public static final String ETL_OUTPUT_FILE_DATETIME_FORMAT = "etl.output.file.datetime.format";
-    public static final String ETL_DEFAULT_TIMEZONE = "etl.default.timezone";
+  public static final String ETL_OUTPUT_FILE_DATETIME_FORMAT = "etl.output.file.datetime.format";
+  public static final String ETL_DEFAULT_TIMEZONE = "etl.default.timezone";
 	public static final String ETL_EXECUTION_HISTORY_MAX_OF_QUOTA = "etl.execution.history.max.of.quota";
 	public static final String ZK_AUDIT_HOSTS = "zookeeper.audit.hosts";
 	public static final String KAFKA_MONITOR_TIER = "kafka.monitor.tier";
@@ -123,9 +124,9 @@ public class CamusJob extends Configured implements Tool {
 		}
 			
 		job.setJobName("Camus Job");
-		if(job.getConfiguration().get("camus.job.name") != null)
+		if(job.getConfiguration().get(CAMUS_JOB_NAME) != null)
 		{
-			job.setJobName(job.getConfiguration().get("camus.job.name"));
+			job.setJobName(job.getConfiguration().get(CAMUS_JOB_NAME));
 		}
 		
 		

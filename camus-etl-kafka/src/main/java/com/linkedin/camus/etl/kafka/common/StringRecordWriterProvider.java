@@ -4,14 +4,20 @@ import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.etl.IEtlKey;
 import com.linkedin.camus.etl.RecordWriterProvider;
 import com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat;
-import java.io.IOException;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.ReflectionUtils;
 
-import org.apache.log4j.Logger;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 
 /**
@@ -23,13 +29,23 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
     public static final String DEFAULT_RECORD_DELIMITER    = "";
 
     protected String recordDelimiter = null;
+    private String fileNameExtension = "";
 
     // TODO: Make this configurable somehow.
     // To do this, we'd have to make RecordWriterProvider have an
     // init(JobContext context) method signature that EtlMultiOutputFormat would always call.
     @Override
-    public String getFilenameExtension() {
-        return "";
+    public String getFilenameExtension(TaskAttemptContext context) {
+      Configuration conf = context.getConfiguration();
+      boolean isCompressed = FileOutputFormat.getCompressOutput(context);
+      CompressionCodec codec = null;
+      if (isCompressed) {
+        Class<? extends CompressionCodec> codecClass =
+                FileOutputFormat.getOutputCompressorClass(context, GzipCodec.class);
+        codec = (CompressionCodec) ReflectionUtils.newInstance(codecClass, conf);
+        fileNameExtension = codec.getDefaultExtension();
+      }
+      return fileNameExtension;
     }
 
     @Override
@@ -47,20 +63,40 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
             );
         }
 
-        // Get the filename for this RecordWriter.
-        Path path = new Path(
-            committer.getWorkPath(),
-            EtlMultiOutputFormat.getUniqueFile(
-                context, fileName, getFilenameExtension()
-            )
-        );
+        Configuration conf = context.getConfiguration();
+        boolean isCompressed = FileOutputFormat.getCompressOutput(context);
+        CompressionCodec codec = null;
+        if (isCompressed) {
+          Class<? extends CompressionCodec> codecClass =
+                  FileOutputFormat.getOutputCompressorClass(context, GzipCodec.class);
+          codec = (CompressionCodec) ReflectionUtils.newInstance(codecClass, conf);
+          fileNameExtension = codec.getDefaultExtension();
+        }
 
-        // Create a FSDataOutputStream stream that will write to path.
-        final FSDataOutputStream writer = path.getFileSystem(context.getConfiguration()).create(path);
+
+          // Get the filename for this RecordWriter.
+          Path file = new Path(
+              committer.getWorkPath(),
+              EtlMultiOutputFormat.getUniqueFile(
+                  context, fileName, fileNameExtension
+              )
+          );
+
+
+        FileSystem fs = file.getFileSystem(conf);
+        final DataOutputStream writer;
+        if (!isCompressed) {
+          writer = fs.create(file, false);
+        } else {
+          FSDataOutputStream fileOut = fs.create(file, false);
+          writer = new DataOutputStream(codec.createOutputStream(fileOut));
+        }
+
 
         // Return a new anonymous RecordWriter that uses the
         // FSDataOutputStream writer to write bytes straight into path.
         return new RecordWriter<IEtlKey, CamusWrapper>() {
+
             @Override
             public void write(IEtlKey ignore, CamusWrapper data) throws IOException {
                 String record = (String)data.getRecord() + recordDelimiter;

@@ -23,7 +23,7 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
     public final static String EXT = ".avro";
 
     @Override
-    public String getFilenameExtension() {
+    public String getFilenameExtension(TaskAttemptContext context) {
         return EXT;
     }
 

@@ -1,5 +1,6 @@
 package com.linkedin.camus.etl.kafka.mapred;
 
+import com.google.common.base.Preconditions;
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.coders.MessageDecoder;
 import com.linkedin.camus.etl.kafka.CamusJob;
@@ -8,6 +9,7 @@ import com.linkedin.camus.etl.kafka.coders.MessageDecoderFactory;
 import com.linkedin.camus.etl.kafka.common.EtlKey;
 import com.linkedin.camus.etl.kafka.common.EtlRequest;
 import com.linkedin.camus.etl.kafka.common.LeaderInfo;
+import com.meituan.data.zabbix.ZabbixSender;
 import kafka.api.PartitionOffsetRequestInfo;
 import kafka.common.ErrorMapping;
 import kafka.common.TopicAndPartition;
@@ -50,6 +52,9 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 	public static final String CAMUS_MESSAGE_DECODER_CLASS = "camus.message.decoder.class";
 	public static final String ETL_IGNORE_SCHEMA_ERRORS = "etl.ignore.schema.errors";
 	public static final String ETL_AUDIT_IGNORE_SERVICE_TOPIC_LIST = "etl.audit.ignore.service.topic.list";
+  public static final String ETL_FAIL_INVALID_OFFSET = "etl.fail.invalid.offset";
+  public static final String MONITOR_ZABBIX_SERVER = "monitor.zabbix.server";
+  public static final String MONITOR_ITEM_HOST = "monitor.item.host";
 
 	private final Logger log = Logger.getLogger(getClass());
 
@@ -147,7 +152,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         String topic = topicAndPartition.topic();
         long customBeginTimestamp = getCustomBeginTimestamp(topic, context);
         if(customBeginTimestamp > 0){
-          log.info(String.format("Topic: [%s], CustomBeginTimestamp: [%d]", topic, customBeginTimestamp));
+          log.info(String.format("Topic: [%s], customBeginTimestamp: [%d]", topic, customBeginTimestamp));
           PartitionOffsetRequestInfo partitionCurrentOffsetRequestInfo = new PartitionOffsetRequestInfo(customBeginTimestamp, 1);
           currentOffsetInfo.put(topicAndPartition, partitionCurrentOffsetRequestInfo);
         }
@@ -179,7 +184,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
           long[] offsets = currentOffsetResponse.offsets(topicAndPartition.topic(), topicAndPartition.partition());
           if(offsets != null && offsets.length > 0){
             currentOffset = offsets[0];
-            log.info(String.format("topic: [%s], partition: [%s], current offset: [%d]", topicAndPartition.topic(), topicAndPartition.partition(), currentOffset));
+            log.info(String.format("Topic: [%s], partition: [%s], current offset: [%d]", topicAndPartition.topic(), topicAndPartition.partition(), currentOffset));
           }
         }
 
@@ -242,10 +247,27 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 		return filteredTopics;
 	}
 
+  public ZabbixSender createZabbixSender(JobContext context) {
+
+    String zabbixServer = context.getConfiguration().get(MONITOR_ZABBIX_SERVER);
+    String itemHostName = context.getConfiguration().get(MONITOR_ITEM_HOST);
+    Preconditions.checkNotNull(zabbixServer != null, "ZabbixServer can not be null");
+    Preconditions.checkNotNull(itemHostName != null, "Zabbix item host can not be null");
+
+    String tokens[] = zabbixServer.split(":");
+    Preconditions.checkArgument(tokens.length == 2,
+            "Zabbix server is invalid, expect:[host:port], actual: " + zabbixServer);
+
+    ZabbixSender zabbixSender = new ZabbixSender(tokens[0], Integer.parseInt(tokens[1]), itemHostName);
+    return zabbixSender;
+  }
+
 	@Override
 	public List<InputSplit> getSplits(JobContext context) throws IOException,
 			InterruptedException {
 		CamusJob.startTiming("getSplits");
+    ZabbixSender zabbixSender = createZabbixSender(context);
+
 		ArrayList<EtlRequest> finalRequests;
 		HashMap<LeaderInfo, ArrayList<TopicAndPartition>> offsetRequestInfo = new HashMap<LeaderInfo, ArrayList<TopicAndPartition>>();
 		try {
@@ -357,6 +379,13 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 			if (request.getEarliestOffset() > request.getOffset()
 					|| request.getOffset() > request.getLastOffset()) {
+        if(context.getConfiguration().get(ETL_FAIL_INVALID_OFFSET).equalsIgnoreCase("True")) {
+          zabbixSender.send(context.getConfiguration().get(CamusJob.CAMUS_JOB_NAME), "invalid offset");
+          log.error(
+              String.format("Topic[%s] current offset[%d] is out of the range of valid kafka offsets[%d,%d]. Exit the program",
+                      request.getTopic(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
+          return null;
+        }
 				if(request.getEarliestOffset() > request.getOffset())
 				{
 					log.error("The earliest offset was found to be more than the current offset");

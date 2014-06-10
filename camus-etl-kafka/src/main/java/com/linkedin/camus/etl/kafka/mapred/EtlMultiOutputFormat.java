@@ -1,10 +1,12 @@
 package com.linkedin.camus.etl.kafka.mapred;
 
+import com.hadoop.compression.lzo.LzoIndexer;
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.coders.Partitioner;
 import com.linkedin.camus.etl.IEtlKey;
 import com.linkedin.camus.etl.RecordWriterProvider;
 import com.linkedin.camus.etl.kafka.common.*;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -332,7 +334,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
-            workingFileMetadataPattern = Pattern.compile("data\\.([^\\.]+)\\.(\\d+)\\.(\\d+)\\.([^\\.]+)-m-\\d+" + recordWriterProvider.getFilenameExtension());
+            workingFileMetadataPattern = Pattern.compile("data\\.([^\\.]+)\\.(\\d+)\\.(\\d+)\\.([^\\.]+)-m-\\d+" + recordWriterProvider.getFilenameExtension(context));
         }
 
         @Override
@@ -359,10 +361,16 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
                             }
 
                         fs.rename(f.getPath(), dest);
+                        String fileNameExtension = recordWriterProvider.getFilenameExtension(context);
+                        //index the dstPath lzo file
+                        if (".lzo".equals(fileNameExtension) ) {
+                          LzoIndexer lzoIndexer = new LzoIndexer(new Configuration());
+                          lzoIndexer.index(dest);
+                        }
 
                         if (isRunTrackingPost(context)) {
                                 count.writeCountsToHDFS(allCountObject, fs, new Path(workPath, COUNTS_PREFIX + "."
-                                        + dest.getName().replace(recordWriterProvider.getFilenameExtension(), "")));
+                                        + dest.getName().replace(fileNameExtension, "")));
                         }
                     }
                 }
@@ -387,7 +395,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
             super.commitTask(context);
         }
 
-        public String getPartitionedPath(JobContext context, String file, int count, long offset) throws IOException {
+        public String getPartitionedPath(TaskAttemptContext context, String file, int count, long offset) throws IOException {
             Matcher m = workingFileMetadataPattern.matcher(file);
             if(! m.find()) {
                 throw new IOException("Could not extract metadata from working filename '" + file + "'");
@@ -404,7 +412,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
             return partitionedPath +
                         "/" + topic + "." + leaderId + "." + partition +
                         "." + count+
-                        "." + offset + recordWriterProvider.getFilenameExtension();
+                        "." + offset + recordWriterProvider.getFilenameExtension(context);
         }
     }
 }
