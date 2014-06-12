@@ -29,6 +29,7 @@ public class MTCamusJob extends CamusJob {
 
   private Properties localProps;
   private String zkLockPath = "";
+  private ZkClient zkClient = null;
 
   public MTCamusJob(String[] args) throws IOException, ParseException {
     super();
@@ -51,12 +52,12 @@ public class MTCamusJob extends CamusJob {
   public int addZkLock() {
 
     try{
-      ZkClient zkClient = createZkClient();
+      zkClient = createZkClient();
       if(zkClient.exists(zkLockPath)){
-        logger.warn("zklock exist: " + zkLockPath);
+        logger.error("zklock exist: " + zkLockPath);
         return ZKLOCK_EXIST;
       }else{
-        zkClient.createPersistent(zkLockPath, true);
+        zkClient.createEphemeral(zkLockPath);
       }
     } catch(Exception ex){
       logger.error("Fail to create zklock: " + zkLockPath);
@@ -67,18 +68,22 @@ public class MTCamusJob extends CamusJob {
 
   public int releaseZkLock() {
 
-    ZkClient zkClient = null;
-    try {
-      zkClient = createZkClient();
-      if(zkClient.exists(zkLockPath)){
-        if(zkClient.delete(zkLockPath)){
-          return ZKLOCK_SUCCESS;
-        }
-      }
-    } catch (IOException e) {
-      logger.error("Fail to release zklock: " + zkLockPath, e);
-      return ZKLOCK_FAIL;
+    if(zkClient != null){
+      zkClient.close();
+      return ZKLOCK_SUCCESS;
     }
+
+//    try {
+//      ZkClient zkClient = createZkClient();
+//      if(zkClient.exists(zkLockPath)){
+//        if(zkClient.delete(zkLockPath)){
+//          return ZKLOCK_SUCCESS;
+//        }
+//      }
+//    } catch (IOException e) {
+//      logger.error("Fail to release zklock: " + zkLockPath, e);
+//      return ZKLOCK_FAIL;
+//    }
 
     return ZKLOCK_SUCCESS;
   }
@@ -143,6 +148,7 @@ public class MTCamusJob extends CamusJob {
       }else{
         zabbixSender.send(camusJobName, "Fail to create zklock: " + zkLockPath);
       }
+      logger.error("Fail to start job, exit program");
       System.exit(-1);
     }
 
