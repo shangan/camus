@@ -380,7 +380,9 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 			if (request.getEarliestOffset() > request.getOffset()
 					|| request.getOffset() > request.getLastOffset()) {
         if(context.getConfiguration().get(ETL_FAIL_INVALID_OFFSET).equalsIgnoreCase("True")) {
-          zabbixSender.send(context.getConfiguration().get(CamusJob.CAMUS_JOB_NAME), "invalid offset");
+          zabbixSender.send(context.getConfiguration().get(CamusJob.CAMUS_JOB_NAME),
+                  String.format("Invalid offset, topic[%s] current offset[%d], valid offsets[%d,%d]",
+                  request.getTopic(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
           log.error(
               String.format("Topic[%s] current offset[%d] is out of the range of valid kafka offsets[%d,%d]. Exit the program",
                       request.getTopic(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
