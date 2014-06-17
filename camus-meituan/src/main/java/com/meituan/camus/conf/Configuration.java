@@ -49,6 +49,9 @@ public class Configuration {
   public static final String CAMUS_MESSAGE_DECODER_CLASS = "camus.message.decoder.class";
   public static final String ETL_IGNORE_SCHEMA_ERRORS = "etl.ignore.schema.errors";
   public static final String ETL_AUDIT_IGNORE_SERVICE_TOPIC_LIST = "etl.audit.ignore.service.topic.list";
+
+  // meituan defined configuration
+  public static final String CAMUS_MESSAGE_DELTA_MILLIS = "camus.message.delta.millis";
   public static final String ETL_FAIL_INVALID_OFFSET = "etl.fail.invalid.offset";
   public static final String MONITOR_ZABBIX_SERVER = "monitor.zabbix.server";
   public static final String MONITOR_ITEM_HOST = "monitor.item.host";
