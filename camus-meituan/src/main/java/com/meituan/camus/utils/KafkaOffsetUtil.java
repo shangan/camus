@@ -1,6 +1,10 @@
 package com.meituan.camus.utils;
 
+import com.meituan.camus.bean.LeaderInfo;
 import com.meituan.camus.conf.Configuration;
+import kafka.common.ErrorMapping;
+import kafka.common.TopicAndPartition;
+import kafka.javaapi.PartitionMetadata;
 import kafka.javaapi.TopicMetadata;
 import kafka.javaapi.TopicMetadataRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
@@ -10,7 +14,10 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 
 /**
@@ -33,9 +40,48 @@ public class KafkaOffsetUtil {
   }
 
 
-  public List<Long[]> topicOffsetRange(String topic) {
+  public List<Long[]> topicOffsetRange(String topic) throws Exception {
 
     List<Long[]> topicOffsetRange = new ArrayList<Long[]>();
+    List<TopicMetadata> topicMetadataList = getKafkaMetadata(props);
+    Map<LeaderInfo, List<TopicAndPartition>> offsetRequestInfo =
+            new HashMap<LeaderInfo, List<TopicAndPartition>>();
+
+    for (TopicMetadata topicMetadata : topicMetadataList) {
+      String crtTopic = topicMetadata.topic();
+      if(! crtTopic.equalsIgnoreCase(topic)){
+        return topicOffsetRange;
+      }
+      for (PartitionMetadata partitionMetadata : topicMetadata
+              .partitionsMetadata()) {
+        if (partitionMetadata.errorCode() != ErrorMapping
+                .NoError()) {
+          log.info("Skipping the creation of ETL request for Topic : "
+                  + topicMetadata.topic()
+                  + " and Partition : "
+                  + partitionMetadata.partitionId()
+                  + " Exception : "
+                  + ErrorMapping
+                  .exceptionFor(partitionMetadata
+                          .errorCode()));
+          continue;
+        } else {
+          LeaderInfo leader = new LeaderInfo(new URI("tcp://"
+                  + partitionMetadata.leader()
+                  .getConnectionString()),
+                  partitionMetadata.leader().id());
+          List<TopicAndPartition> topicAndPartitions = offsetRequestInfo.get(leader);
+          if(topicAndPartitions == null){
+            topicAndPartitions = new ArrayList<TopicAndPartition>();
+            offsetRequestInfo.put(leader, topicAndPartitions);
+          }
+          topicAndPartitions.add(new TopicAndPartition(
+                          topicMetadata.topic(),
+                          partitionMetadata.partitionId()));
+        }
+      }
+    }
+
 
 
     return topicOffsetRange;

@@ -73,15 +73,13 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
           fileNameExtension = codec.getDefaultExtension();
         }
 
-
-          // Get the filename for this RecordWriter.
-          Path file = new Path(
-              committer.getWorkPath(),
-              EtlMultiOutputFormat.getUniqueFile(
-                  context, fileName, fileNameExtension
-              )
-          );
-
+        // Get the filename for this RecordWriter.
+        Path file = new Path(
+            committer.getWorkPath(),
+            EtlMultiOutputFormat.getUniqueFile(
+                context, fileName, fileNameExtension
+            )
+        );
 
         FileSystem fs = file.getFileSystem(conf);
         final DataOutputStream writer;

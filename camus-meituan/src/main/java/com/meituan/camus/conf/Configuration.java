@@ -53,4 +53,15 @@ public class Configuration {
   public static final String MONITOR_ZABBIX_SERVER = "monitor.zabbix.server";
   public static final String MONITOR_ITEM_HOST = "monitor.item.host";
 
+  public static final String ZABBIX_ITEM_COMMON_KEY = "camus.etl.failinfo";
+  public static final String CAMUS_JOB_NAME_VARIABLE = "{" + CAMUS_JOB_NAME + "}";
+
+  public static String getEtlExecutionBasePath(String basePath, String jobName) {
+    return basePath.replace(CAMUS_JOB_NAME_VARIABLE, jobName.trim());
+  }
+
+  public static String getEtlExecutionHistoryPath(String historyPath, String jobName){
+    return historyPath.replace(CAMUS_JOB_NAME_VARIABLE, jobName.trim());
+  }
+
 }

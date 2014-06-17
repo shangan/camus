@@ -57,10 +57,10 @@ public class MTCamusJob extends CamusJob {
         logger.error("zklock exist: " + zkLockPath);
         return ZKLOCK_EXIST;
       }else{
-        zkClient.createEphemeral(zkLockPath);
+        zkClient.createEphemeral(zkLockPath, "lock");
       }
     } catch(Exception ex){
-      logger.error("Fail to create zklock: " + zkLockPath);
+      logger.error("Fail to create zklock: " + zkLockPath, ex);
       return ZKLOCK_FAIL;
     }
     return ZKLOCK_SUCCESS;
@@ -144,9 +144,11 @@ public class MTCamusJob extends CamusJob {
       ToolRunner.run(this, args);
     }else{
       if(status == ZKLOCK_EXIST){
-        zabbixSender.send(camusJobName, "zklock exist: " + zkLockPath);
+        zabbixSender.send(Configuration.ZABBIX_ITEM_COMMON_KEY,
+                String.format("ERROR, job[%s], zklock[%s] exist", camusJobName, zkLockPath));
       }else{
-        zabbixSender.send(camusJobName, "Fail to create zklock: " + zkLockPath);
+        zabbixSender.send(Configuration.ZABBIX_ITEM_COMMON_KEY,
+                String.format("ERROR, job[%s] fail to create zklock[%s]", camusJobName, zkLockPath));
       }
       logger.error("Fail to start job, exit program");
       System.exit(-1);
@@ -154,7 +156,8 @@ public class MTCamusJob extends CamusJob {
 
     status = releaseZkLock();
     if(status != ZKLOCK_SUCCESS){
-      zabbixSender.send(camusJobName, "Fail to release zklock: " + zkLockPath);
+      zabbixSender.send(Configuration.ZABBIX_ITEM_COMMON_KEY,
+              String.format("ERROR, job[%s] fail to release zklock[%s]", camusJobName, zkLockPath));
     }
 
   }

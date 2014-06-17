@@ -173,7 +173,16 @@ public class CamusJob extends Configured implements Tool {
 
 		startTiming("pre-setup");
 		startTiming("total");
+    String execBasePathStr = com.meituan.camus.conf.Configuration.getEtlExecutionBasePath(
+            props.getProperty(ETL_EXECUTION_BASE_PATH), props.getProperty(CAMUS_JOB_NAME));
+    String execHistoryStr = com.meituan.camus.conf.Configuration.getEtlExecutionHistoryPath(
+            props.getProperty(ETL_EXECUTION_HISTORY_PATH), props.getProperty(CAMUS_JOB_NAME));
+    // keep config consistent in global scope
+    props.setProperty(ETL_EXECUTION_BASE_PATH, execBasePathStr);
+    props.setProperty(ETL_EXECUTION_HISTORY_PATH, execHistoryStr);
+
 		Job job = createJob(props);
+
 		if (getLog4jConfigure(job)) {
 			DOMConfigurator.configure("log4j.xml");
 		}
@@ -182,9 +191,8 @@ public class CamusJob extends Configured implements Tool {
 		log.info("Dir Destination set to: "
 				+ EtlMultiOutputFormat.getDestinationPath(job));
 
-		Path execBasePath = new Path(props.getProperty(ETL_EXECUTION_BASE_PATH));
-		Path execHistory = new Path(
-				props.getProperty(ETL_EXECUTION_HISTORY_PATH));
+		Path execBasePath = new Path(execBasePathStr);
+		Path execHistory = new Path(execHistoryStr);
 
 		if (!fs.exists(execBasePath)) {
 			log.info("The execution base path does not exist. Creating the directory");

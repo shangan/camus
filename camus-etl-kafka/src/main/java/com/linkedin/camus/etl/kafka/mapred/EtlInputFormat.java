@@ -9,6 +9,7 @@ import com.linkedin.camus.etl.kafka.coders.MessageDecoderFactory;
 import com.linkedin.camus.etl.kafka.common.EtlKey;
 import com.linkedin.camus.etl.kafka.common.EtlRequest;
 import com.linkedin.camus.etl.kafka.common.LeaderInfo;
+import com.meituan.camus.conf.Configuration;
 import com.meituan.data.zabbix.ZabbixSender;
 import kafka.api.PartitionOffsetRequestInfo;
 import kafka.common.ErrorMapping;
@@ -379,14 +380,15 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 			if (request.getEarliestOffset() > request.getOffset()
 					|| request.getOffset() > request.getLastOffset()) {
-        if(context.getConfiguration().get(ETL_FAIL_INVALID_OFFSET).equalsIgnoreCase("True")) {
-          zabbixSender.send(context.getConfiguration().get(CamusJob.CAMUS_JOB_NAME),
-                  String.format("Invalid offset, topic[%s] current offset[%d], valid offsets[%d,%d]",
-                  request.getTopic(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
+        if(context.getConfiguration().get(ETL_FAIL_INVALID_OFFSET, "False").equalsIgnoreCase("True")) {
+          zabbixSender.send(Configuration.ZABBIX_ITEM_COMMON_KEY,
+                  String.format("ERROR, Job[%s], invalid offset, topic[%s] current offset[%d], valid offsets[%d,%d]",
+                  context.getConfiguration().get(CamusJob.CAMUS_JOB_NAME), request.getTopic(),
+                  request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
           log.error(
               String.format("Topic[%s] current offset[%d] is out of the range of valid kafka offsets[%d,%d]. Exit the program",
                       request.getTopic(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
-          return null;
+          System.exit(-1);
         }
 				if(request.getEarliestOffset() > request.getOffset())
 				{
