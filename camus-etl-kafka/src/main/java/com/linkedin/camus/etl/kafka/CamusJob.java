@@ -3,7 +3,6 @@ package com.linkedin.camus.etl.kafka;
 import com.linkedin.camus.etl.kafka.common.*;
 import com.linkedin.camus.etl.kafka.mapred.EtlInputFormat;
 import com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat;
-import com.meituan.hadoop.SecurityUtils;
 import org.apache.commons.cli.*;
 import org.apache.commons.cli.Options;
 import org.apache.hadoop.conf.Configuration;
@@ -34,20 +33,19 @@ import org.joda.time.format.DateTimeFormatter;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.security.PrivilegedAction;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.Map.Entry;
 
 public class CamusJob extends Configured implements Tool {
 
-  public static final String CAMUS_JOB_NAME = "camus.job.name";
+	public static final String CAMUS_JOB_NAME = "camus.job.name";
 	public static final String ETL_EXECUTION_BASE_PATH = "etl.execution.base.path";
 	public static final String ETL_EXECUTION_HISTORY_PATH = "etl.execution.history.path";
 	public static final String ETL_COUNTS_PATH = "etl.counts.path";
 	public static final String ETL_KEEP_COUNT_FILES = "etl.keep.count.files";
-  public static final String ETL_OUTPUT_FILE_DATETIME_FORMAT = "etl.output.file.datetime.format";
-  public static final String ETL_DEFAULT_TIMEZONE = "etl.default.timezone";
+	public static final String ETL_OUTPUT_FILE_DATETIME_FORMAT = "etl.output.file.datetime.format";
+	public static final String ETL_DEFAULT_TIMEZONE = "etl.default.timezone";
 	public static final String ETL_EXECUTION_HISTORY_MAX_OF_QUOTA = "etl.execution.history.max.of.quota";
 	public static final String ZK_AUDIT_HOSTS = "zookeeper.audit.hosts";
 	public static final String KAFKA_MONITOR_TIER = "kafka.monitor.tier";
@@ -98,20 +96,18 @@ public class CamusJob extends Configured implements Tool {
 	}
 
 	private Job createJob(Properties props) throws IOException {
-		
-		if(getConf() == null)
-		{
+
+		if (getConf() == null) {
 			Configuration conf = new Configuration();
-			for(Object key : props.keySet())
-			{
+			for (Object key : props.keySet()) {
 				conf.set(key.toString(), props.getProperty(key.toString()));
 			}
 			setConf(conf);
 		}
-		
+
 		Job job = new Job(getConf());
 		job.setJarByClass(CamusJob.class);
-		
+
 
 		// Set the default partitioner
 		job.getConfiguration().set(
@@ -122,14 +118,13 @@ public class CamusJob extends Configured implements Tool {
 			job.getConfiguration().set(key.toString(),
 					props.getProperty(key.toString()));
 		}
-			
+
 		job.setJobName("Camus Job");
-		if(job.getConfiguration().get(CAMUS_JOB_NAME) != null)
-		{
+		if (job.getConfiguration().get(CAMUS_JOB_NAME) != null) {
 			job.setJobName(job.getConfiguration().get(CAMUS_JOB_NAME));
 		}
-		
-		
+
+
 		FileSystem fs = FileSystem.get(job.getConfiguration());
 
 		String hadoopCacheJarDir = job.getConfiguration().get(
@@ -173,13 +168,13 @@ public class CamusJob extends Configured implements Tool {
 
 		startTiming("pre-setup");
 		startTiming("total");
-    String execBasePathStr = com.meituan.camus.conf.Configuration.getEtlExecutionBasePath(
-            props.getProperty(ETL_EXECUTION_BASE_PATH), props.getProperty(CAMUS_JOB_NAME));
-    String execHistoryStr = com.meituan.camus.conf.Configuration.getEtlExecutionHistoryPath(
-            props.getProperty(ETL_EXECUTION_HISTORY_PATH), props.getProperty(CAMUS_JOB_NAME));
-    // keep config consistent in global scope
-    props.setProperty(ETL_EXECUTION_BASE_PATH, execBasePathStr);
-    props.setProperty(ETL_EXECUTION_HISTORY_PATH, execHistoryStr);
+		String execBasePathStr = com.meituan.camus.conf.Configuration.getEtlExecutionBasePath(
+				props.getProperty(ETL_EXECUTION_BASE_PATH), props.getProperty(CAMUS_JOB_NAME));
+		String execHistoryStr = com.meituan.camus.conf.Configuration.getEtlExecutionHistoryPath(
+				props.getProperty(ETL_EXECUTION_HISTORY_PATH), props.getProperty(CAMUS_JOB_NAME));
+		// keep config consistent in global scope
+		props.setProperty(ETL_EXECUTION_BASE_PATH, execBasePathStr);
+		props.setProperty(ETL_EXECUTION_HISTORY_PATH, execHistoryStr);
 
 		Job job = createJob(props);
 
@@ -242,7 +237,7 @@ public class CamusJob extends Configured implements Tool {
 		// be written to this directory. data is not written to the
 		// output directory in a normal run, but instead written to the
 		// appropriate date-partitioned subdir in camus.destination.path
-        String dateTimeFormatStr = props.getProperty(ETL_OUTPUT_FILE_DATETIME_FORMAT, "YYYY-MM-dd-HH-mm-ss");
+		String dateTimeFormatStr = props.getProperty(ETL_OUTPUT_FILE_DATETIME_FORMAT, "YYYY-MM-dd-HH-mm-ss");
 		DateTimeFormatter dateFmt = DateUtils.getDateTimeFormatter(
 				dateTimeFormatStr, DateTimeZone.forID(props.getProperty(ETL_DEFAULT_TIMEZONE, "Asia/Shanghai")));
 		Path newExecutionOutput = new Path(execBasePath,
@@ -323,7 +318,7 @@ public class CamusJob extends Configured implements Tool {
 
 	// Posts the tracking counts to Kafka
 	public void sendTrackingCounts(JobContext job, FileSystem fs,
-			Path newExecutionOutput) throws IOException, URISyntaxException {
+								   Path newExecutionOutput) throws IOException, URISyntaxException {
 		if (EtlMultiOutputFormat.isRunTrackingPost(job)) {
 			FileStatus[] gstatuses = fs.listStatus(newExecutionOutput,
 					new PrefixFilter("counts"));
@@ -413,7 +408,7 @@ public class CamusJob extends Configured implements Tool {
 	/**
 	 * Creates a diagnostic report mostly focused on timing breakdowns. Useful
 	 * for determining where to optimize.
-	 * 
+	 *
 	 * @param job
 	 * @param timingMap
 	 * @throws IOException
@@ -544,10 +539,10 @@ public class CamusJob extends Configured implements Tool {
 		}
 	}
 
-  public static void main(String[] args) throws Exception {
-    CamusJob job = new CamusJob();
-    ToolRunner.run(job, args);
-  }
+	public static void main(String[] args) throws Exception {
+		CamusJob job = new CamusJob();
+		ToolRunner.run(job, args);
+	}
 
 	@SuppressWarnings("static-access")
 	@Override
@@ -571,8 +566,8 @@ public class CamusJob extends Configured implements Tool {
 		}
 
 		if (cmd.hasOption('p'))
-		    props.load(this.getClass().getClassLoader().getResourceAsStream(
-                    cmd.getOptionValue('p')));
+			props.load(this.getClass().getClassLoader().getResourceAsStream(
+					cmd.getOptionValue('p')));
 
 		if (cmd.hasOption('P')) {
 			File file = new File(cmd.getOptionValue('P'));
@@ -581,6 +576,14 @@ public class CamusJob extends Configured implements Tool {
 		}
 
 		props.putAll(cmd.getOptionProperties("D"));
+
+		// fix typo e.g. leading and trailing blanks in value
+		for (Object key : props.keySet()) {
+			String value = props.getProperty(key.toString());
+			if (value != null) {
+				props.setProperty(key.toString(), value.trim());
+			}
+		}
 
 		run();
 		return 0;
@@ -607,8 +610,8 @@ public class CamusJob extends Configured implements Tool {
 		if (brokers == null) {
 			brokers = job.getConfiguration().get(KAFKA_HOST_URL);
 			if (brokers != null) {
-				log.warn("The configuration properties " + KAFKA_HOST_URL + " and " + 
-					KAFKA_HOST_PORT + " are deprecated. Please switch to using " + KAFKA_BROKERS);
+				log.warn("The configuration properties " + KAFKA_HOST_URL + " and " +
+						KAFKA_HOST_PORT + " are deprecated. Please switch to using " + KAFKA_BROKERS);
 				return brokers + ":" + job.getConfiguration().getInt(KAFKA_HOST_PORT, 10251);
 			}
 		}

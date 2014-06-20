@@ -10,6 +10,7 @@ import com.linkedin.camus.etl.kafka.common.EtlKey;
 import com.linkedin.camus.etl.kafka.common.EtlRequest;
 import com.linkedin.camus.etl.kafka.common.LeaderInfo;
 import com.meituan.camus.conf.Configuration;
+import com.meituan.camus.etl.MeituanKafkaTopicFilter;
 import com.meituan.data.zabbix.ZabbixSender;
 import kafka.api.PartitionOffsetRequestInfo;
 import kafka.common.ErrorMapping;
@@ -44,7 +45,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 	public static final String KAFKA_CLIENT_BUFFER_SIZE = "kafka.client.buffer.size";
 	public static final String KAFKA_CLIENT_SO_TIMEOUT = "kafka.client.so.timeout";
-  public static final String KAFKA_BEGIN_TIMESTAMP = "kafka.begin.timestamp";
+	public static final String KAFKA_BEGIN_TIMESTAMP = "kafka.begin.timestamp";
 
 	public static final String KAFKA_MAX_PULL_HRS = "kafka.max.pull.hrs";
 	public static final String KAFKA_MAX_PULL_MINUTES_PER_TASK = "kafka.max.pull.minutes.per.task";
@@ -53,9 +54,9 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 	public static final String CAMUS_MESSAGE_DECODER_CLASS = "camus.message.decoder.class";
 	public static final String ETL_IGNORE_SCHEMA_ERRORS = "etl.ignore.schema.errors";
 	public static final String ETL_AUDIT_IGNORE_SERVICE_TOPIC_LIST = "etl.audit.ignore.service.topic.list";
-  public static final String ETL_FAIL_INVALID_OFFSET = "etl.fail.invalid.offset";
-  public static final String MONITOR_ZABBIX_SERVER = "monitor.zabbix.server";
-  public static final String MONITOR_ITEM_HOST = "monitor.item.host";
+	public static final String ETL_FAIL_INVALID_OFFSET = "etl.fail.invalid.offset";
+	public static final String MONITOR_ZABBIX_SERVER = "monitor.zabbix.server";
+	public static final String MONITOR_ITEM_HOST = "monitor.item.host";
 
 	private final Logger log = Logger.getLogger(getClass());
 
@@ -141,7 +142,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 					kafka.api.OffsetRequest.EarliestTime(), 1);
 			Map<TopicAndPartition, PartitionOffsetRequestInfo> latestOffsetInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
 			Map<TopicAndPartition, PartitionOffsetRequestInfo> earliestOffsetInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
-      Map<TopicAndPartition, PartitionOffsetRequestInfo> currentOffsetInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
+			Map<TopicAndPartition, PartitionOffsetRequestInfo> currentOffsetInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
 			ArrayList<TopicAndPartition> topicAndPartitions = offsetRequestInfo
 					.get(leader);
 			for (TopicAndPartition topicAndPartition : topicAndPartitions) {
@@ -149,14 +150,14 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 						partitionLatestOffsetRequestInfo);
 				earliestOffsetInfo.put(topicAndPartition,
 						partitionEarliestOffsetRequestInfo);
-        // specific offset
-        String topic = topicAndPartition.topic();
-        long customBeginTimestamp = getCustomBeginTimestamp(topic, context);
-        if(customBeginTimestamp > 0){
-          log.info(String.format("Topic: [%s], customBeginTimestamp: [%d]", topic, customBeginTimestamp));
-          PartitionOffsetRequestInfo partitionCurrentOffsetRequestInfo = new PartitionOffsetRequestInfo(customBeginTimestamp, 1);
-          currentOffsetInfo.put(topicAndPartition, partitionCurrentOffsetRequestInfo);
-        }
+				// specific offset
+				String topic = topicAndPartition.topic();
+				long customBeginTimestamp = getCustomBeginTimestamp(topic, context);
+				if(customBeginTimestamp > 0){
+				  log.info(String.format("Topic: [%s], customBeginTimestamp: [%d]", topic, customBeginTimestamp));
+				  PartitionOffsetRequestInfo partitionCurrentOffsetRequestInfo = new PartitionOffsetRequestInfo(customBeginTimestamp, 1);
+				  currentOffsetInfo.put(topicAndPartition, partitionCurrentOffsetRequestInfo);
+				}
 			}
 
 			OffsetResponse latestOffsetResponse = consumer
@@ -167,10 +168,10 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 					.getOffsetsBefore(new OffsetRequest(earliestOffsetInfo,
 							kafka.api.OffsetRequest.CurrentVersion(), CamusJob
 									.getKafkaClientName(context)));
-      OffsetResponse currentOffsetResponse = consumer
-          .getOffsetsBefore(new OffsetRequest(currentOffsetInfo,
-                  kafka.api.OffsetRequest.CurrentVersion(),
-                  CamusJob.getKafkaClientName(context)));
+			OffsetResponse currentOffsetResponse = consumer
+					.getOffsetsBefore(new OffsetRequest(currentOffsetInfo,
+							kafka.api.OffsetRequest.CurrentVersion(),
+							CamusJob.getKafkaClientName(context)));
 
 			consumer.close();
 			for (TopicAndPartition topicAndPartition : topicAndPartitions) {
@@ -180,14 +181,14 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 				long earliestOffset = earliestOffsetResponse.offsets(
 						topicAndPartition.topic(),
 						topicAndPartition.partition())[0];
-        long currentOffset = 0;
-        if(currentOffsetInfo.containsKey(topicAndPartition)){
-          long[] offsets = currentOffsetResponse.offsets(topicAndPartition.topic(), topicAndPartition.partition());
-          if(offsets != null && offsets.length > 0){
-            currentOffset = offsets[0];
-            log.info(String.format("Topic: [%s], partition: [%s], current offset: [%d]", topicAndPartition.topic(), topicAndPartition.partition(), currentOffset));
-          }
-        }
+				long currentOffset = 0;
+				if(currentOffsetInfo.containsKey(topicAndPartition)){
+					long[] offsets = currentOffsetResponse.offsets(topicAndPartition.topic(), topicAndPartition.partition());
+					if(offsets != null && offsets.length > 0){
+						currentOffset = offsets[0];
+						log.info(String.format("Topic: [%s], partition: [%s], current offset: [%d]", topicAndPartition.topic(), topicAndPartition.partition(), currentOffset));
+					}
+				}
 
 				EtlRequest etlRequest = new EtlRequest(context,
 						topicAndPartition.topic(), Integer.toString(leader
@@ -195,30 +196,30 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 						leader.getUri());
 				etlRequest.setLatestOffset(latestOffset);
 				etlRequest.setEarliestOffset(earliestOffset);
-        etlRequest.setOffset(currentOffset);
+				etlRequest.setOffset(currentOffset);
 				finalRequests.add(etlRequest);
 			}
 		}
 		return finalRequests;
 	}
 
-  private long getCustomBeginTimestamp(String topic, JobContext context){
-    String customBeginTimestamp = context.getConfiguration().get(KAFKA_BEGIN_TIMESTAMP + "." + topic);
-    if(customBeginTimestamp == null){
-      customBeginTimestamp = context.getConfiguration().get(KAFKA_BEGIN_TIMESTAMP);
-    }
+	private long getCustomBeginTimestamp(String topic, JobContext context){
+		String customBeginTimestamp = context.getConfiguration().get(KAFKA_BEGIN_TIMESTAMP + "." + topic);
+		if(customBeginTimestamp == null){
+			customBeginTimestamp = context.getConfiguration().get(KAFKA_BEGIN_TIMESTAMP);
 
-    if(customBeginTimestamp != null){
-      try{
-        return Long.parseLong(customBeginTimestamp);
-      }catch(Exception ex){
-        log.warn(String.format("Parse customBeginTimestamp: [%s] failed, topic: [%s] ", customBeginTimestamp, topic));
-        return 0;
-      }
-    }
+			if(customBeginTimestamp != null){
+			  try{
+				return Long.parseLong(customBeginTimestamp);
+			  }catch(Exception ex){
+				log.warn(String.format("Parse customBeginTimestamp: [%s] failed, topic: [%s] ", customBeginTimestamp, topic));
+				return 0;
+			  }
+			}
+		}
 
-    return 0;
-  }
+		return 0;
+	}
 
 	public String createTopicRegEx(HashSet<String> topicsSet) {
 		String regex = "";
@@ -248,26 +249,26 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 		return filteredTopics;
 	}
 
-  public ZabbixSender createZabbixSender(JobContext context) {
+	public ZabbixSender createZabbixSender(JobContext context) {
 
-    String zabbixServer = context.getConfiguration().get(MONITOR_ZABBIX_SERVER);
-    String itemHostName = context.getConfiguration().get(MONITOR_ITEM_HOST);
-    Preconditions.checkNotNull(zabbixServer != null, "ZabbixServer can not be null");
-    Preconditions.checkNotNull(itemHostName != null, "Zabbix item host can not be null");
+		String zabbixServer = context.getConfiguration().get(MONITOR_ZABBIX_SERVER);
+		String itemHostName = context.getConfiguration().get(MONITOR_ITEM_HOST);
+		Preconditions.checkNotNull(zabbixServer != null, "ZabbixServer can not be null");
+		Preconditions.checkNotNull(itemHostName != null, "Zabbix item host can not be null");
 
-    String tokens[] = zabbixServer.split(":");
-    Preconditions.checkArgument(tokens.length == 2,
-            "Zabbix server is invalid, expect:[host:port], actual: " + zabbixServer);
+		String tokens[] = zabbixServer.split(":");
+		Preconditions.checkArgument(tokens.length == 2,
+				"Zabbix server is invalid, expect:[host:port], actual: " + zabbixServer);
 
-    ZabbixSender zabbixSender = new ZabbixSender(tokens[0], Integer.parseInt(tokens[1]), itemHostName);
-    return zabbixSender;
-  }
+		ZabbixSender zabbixSender = new ZabbixSender(tokens[0], Integer.parseInt(tokens[1]), itemHostName);
+		return zabbixSender;
+	}
 
 	@Override
 	public List<InputSplit> getSplits(JobContext context) throws IOException,
 			InterruptedException {
 		CamusJob.startTiming("getSplits");
-    ZabbixSender zabbixSender = createZabbixSender(context);
+		ZabbixSender zabbixSender = createZabbixSender(context);
 
 		ArrayList<EtlRequest> finalRequests;
 		HashMap<LeaderInfo, ArrayList<TopicAndPartition>> offsetRequestInfo = new HashMap<LeaderInfo, ArrayList<TopicAndPartition>>();
@@ -282,6 +283,14 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 			if (!whiteListTopics.isEmpty()) {
 				topicMetadataList = filterWhitelistTopics(topicMetadataList,
 						whiteListTopics);
+			}
+			if(context.getConfiguration().
+					get(Configuration.KAFKA_WHITELIST_TOPIC_STRICT, "true").equalsIgnoreCase("true")){
+				topicMetadataList = MeituanKafkaTopicFilter.filterWhiteList(topicMetadataList, whiteListTopics);
+				if(topicMetadataList == null || topicMetadataList.size() == 0){
+					log.error("No topic is selected, exit program. white list topic: " + whiteListTopics);
+					return null;
+				}
 			}
 
 			// Filter all blacklist topics
@@ -372,24 +381,25 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 			EtlKey key = offsetKeys.get(request);
 
-      // use previous offset when current offset is the default value 0
-			if (key != null && request.getOffset() <= 0) {
-        log.info("Current offset is set to previous offset: " + key.getOffset());
-				request.setOffset(key.getOffset());
-			}
+            // use previous offset when current offset is the default value 0
+            if (key != null && request.getOffset() <= 0) {
+                log.info("Current offset is set to previous offset: " + key.getOffset());
+                request.setOffset(key.getOffset());
+            }
 
 			if (request.getEarliestOffset() > request.getOffset()
 					|| request.getOffset() > request.getLastOffset()) {
-        if(context.getConfiguration().get(ETL_FAIL_INVALID_OFFSET, "False").equalsIgnoreCase("True")) {
-          zabbixSender.send(Configuration.ZABBIX_ITEM_COMMON_KEY,
-                  String.format("ERROR, Job[%s], invalid offset, topic[%s] current offset[%d], valid offsets[%d,%d]",
-                  context.getConfiguration().get(CamusJob.CAMUS_JOB_NAME), request.getTopic(),
-                  request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
-          log.error(
-              String.format("Topic[%s] current offset[%d] is out of the range of valid kafka offsets[%d,%d]. Exit the program",
-                      request.getTopic(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
-          System.exit(-1);
-        }
+
+				if(context.getConfiguration().get(ETL_FAIL_INVALID_OFFSET, "False").equalsIgnoreCase("True")) {
+					zabbixSender.send(Configuration.ZABBIX_ITEM_COMMON_KEY,
+						String.format("ERROR, Job[%s], invalid offset, topic[%s] current offset[%d], valid offsets[%d,%d]",
+						context.getConfiguration().get(CamusJob.CAMUS_JOB_NAME), request.getTopic(),
+						request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
+					log.error(String.format("Topic[%s] current offset[%d] is out of the range of valid kafka offsets[%d,%d]. Exit the program",
+							  request.getTopic(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
+					return null;
+					//System.exit(-1);
+				}
 				if(request.getEarliestOffset() > request.getOffset())
 				{
 					log.error("The earliest offset was found to be more than the current offset");

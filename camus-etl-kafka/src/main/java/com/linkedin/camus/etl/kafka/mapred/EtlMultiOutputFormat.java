@@ -401,6 +401,11 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
                 throw new IOException("Could not extract metadata from working filename '" + file + "'");
             }
             String topic = m.group(1);
+            // target table in etl template, user can specify the target table
+            String targetTopic = context.getConfiguration().get(com.meituan.camus.conf.Configuration.ETL_TARGET_TOPIC);
+            if(targetTopic != null){
+                topic = targetTopic;
+            }
             String leaderId = m.group(2);
             String partition = m.group(3);
             String encodedPartition = m.group(4);

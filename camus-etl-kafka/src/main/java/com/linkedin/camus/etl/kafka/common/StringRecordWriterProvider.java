@@ -25,86 +25,86 @@ import java.io.IOException;
  * a String record as bytes to HDFS without any reformatting or compession.
  */
 public class StringRecordWriterProvider implements RecordWriterProvider {
-    public static final String ETL_OUTPUT_RECORD_DELIMITER = "etl.output.record.delimiter";
-    public static final String DEFAULT_RECORD_DELIMITER    = "";
+	public static final String ETL_OUTPUT_RECORD_DELIMITER = "etl.output.record.delimiter";
+	public static final String DEFAULT_RECORD_DELIMITER = "";
 
-    protected String recordDelimiter = null;
-    private String fileNameExtension = "";
+	protected String recordDelimiter = null;
+	private String fileNameExtension = "";
 
-    // TODO: Make this configurable somehow.
-    // To do this, we'd have to make RecordWriterProvider have an
-    // init(JobContext context) method signature that EtlMultiOutputFormat would always call.
-    @Override
-    public String getFilenameExtension(TaskAttemptContext context) {
-      Configuration conf = context.getConfiguration();
-      boolean isCompressed = FileOutputFormat.getCompressOutput(context);
-      CompressionCodec codec = null;
-      if (isCompressed) {
-        Class<? extends CompressionCodec> codecClass =
-                FileOutputFormat.getOutputCompressorClass(context, GzipCodec.class);
-        codec = (CompressionCodec) ReflectionUtils.newInstance(codecClass, conf);
-        fileNameExtension = codec.getDefaultExtension();
-      }
-      return fileNameExtension;
-    }
+	// TODO: Make this configurable somehow.
+	// To do this, we'd have to make RecordWriterProvider have an
+	// init(JobContext context) method signature that EtlMultiOutputFormat would always call.
+	@Override
+	public String getFilenameExtension(TaskAttemptContext context) {
+		Configuration conf = context.getConfiguration();
+		boolean isCompressed = FileOutputFormat.getCompressOutput(context);
+		CompressionCodec codec = null;
+		if (isCompressed) {
+			Class<? extends CompressionCodec> codecClass =
+					FileOutputFormat.getOutputCompressorClass(context, GzipCodec.class);
+			codec = (CompressionCodec) ReflectionUtils.newInstance(codecClass, conf);
+			fileNameExtension = codec.getDefaultExtension();
+		}
+		return fileNameExtension;
+	}
 
-    @Override
-    public RecordWriter<IEtlKey, CamusWrapper> getDataRecordWriter(
-            TaskAttemptContext  context,
-            String              fileName,
-            CamusWrapper        camusWrapper,
-            FileOutputCommitter committer) throws IOException, InterruptedException {
+	@Override
+	public RecordWriter<IEtlKey, CamusWrapper> getDataRecordWriter(
+			TaskAttemptContext context,
+			String fileName,
+			CamusWrapper camusWrapper,
+			FileOutputCommitter committer) throws IOException, InterruptedException {
 
-        // If recordDelimiter hasn't been initialized, do so now
-        if (recordDelimiter == null) {
-            recordDelimiter = context.getConfiguration().get(
-                ETL_OUTPUT_RECORD_DELIMITER,
-                DEFAULT_RECORD_DELIMITER
-            );
-        }
+		// If recordDelimiter hasn't been initialized, do so now
+		if (recordDelimiter == null) {
+			recordDelimiter = context.getConfiguration().get(
+					ETL_OUTPUT_RECORD_DELIMITER,
+					DEFAULT_RECORD_DELIMITER
+			);
+		}
 
-        Configuration conf = context.getConfiguration();
-        boolean isCompressed = FileOutputFormat.getCompressOutput(context);
-        CompressionCodec codec = null;
-        if (isCompressed) {
-          Class<? extends CompressionCodec> codecClass =
-                  FileOutputFormat.getOutputCompressorClass(context, GzipCodec.class);
-          codec = (CompressionCodec) ReflectionUtils.newInstance(codecClass, conf);
-          fileNameExtension = codec.getDefaultExtension();
-        }
+		Configuration conf = context.getConfiguration();
+		boolean isCompressed = FileOutputFormat.getCompressOutput(context);
+		CompressionCodec codec = null;
+		if (isCompressed) {
+			Class<? extends CompressionCodec> codecClass =
+					FileOutputFormat.getOutputCompressorClass(context, GzipCodec.class);
+			codec = (CompressionCodec) ReflectionUtils.newInstance(codecClass, conf);
+			fileNameExtension = codec.getDefaultExtension();
+		}
 
-        // Get the filename for this RecordWriter.
-        Path file = new Path(
-            committer.getWorkPath(),
-            EtlMultiOutputFormat.getUniqueFile(
-                context, fileName, fileNameExtension
-            )
-        );
+		// Get the filename for this RecordWriter.
+		Path file = new Path(
+				committer.getWorkPath(),
+				EtlMultiOutputFormat.getUniqueFile(
+						context, fileName, fileNameExtension
+				)
+		);
 
-        FileSystem fs = file.getFileSystem(conf);
-        final DataOutputStream writer;
-        if (!isCompressed) {
-          writer = fs.create(file, false);
-        } else {
-          FSDataOutputStream fileOut = fs.create(file, false);
-          writer = new DataOutputStream(codec.createOutputStream(fileOut));
-        }
+		FileSystem fs = file.getFileSystem(conf);
+		final DataOutputStream writer;
+		if (!isCompressed) {
+			writer = fs.create(file, false);
+		} else {
+			FSDataOutputStream fileOut = fs.create(file, false);
+			writer = new DataOutputStream(codec.createOutputStream(fileOut));
+		}
 
 
-        // Return a new anonymous RecordWriter that uses the
-        // FSDataOutputStream writer to write bytes straight into path.
-        return new RecordWriter<IEtlKey, CamusWrapper>() {
+		// Return a new anonymous RecordWriter that uses the
+		// FSDataOutputStream writer to write bytes straight into path.
+		return new RecordWriter<IEtlKey, CamusWrapper>() {
 
-            @Override
-            public void write(IEtlKey ignore, CamusWrapper data) throws IOException {
-                String record = (String)data.getRecord() + recordDelimiter;
-                writer.write(record.getBytes());
-            }
+			@Override
+			public void write(IEtlKey ignore, CamusWrapper data) throws IOException {
+				String record = (String) data.getRecord() + recordDelimiter;
+				writer.write(record.getBytes());
+			}
 
-            @Override
-            public void close(TaskAttemptContext context) throws IOException, InterruptedException {
-                writer.close();
-            }
-        };
-    }
+			@Override
+			public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+				writer.close();
+			}
+		};
+	}
 }

@@ -4,25 +4,24 @@ import java.net.URI;
 
 /**
  * Model class to store the leaderInformation
- * @author ggupta
  *
+ * @author ggupta
  */
 
 public class LeaderInfo {
-	
+
 	private URI uri;
 	private int leaderId;
-	
-	public LeaderInfo(URI uri, int leaderId)
-	{
+
+	public LeaderInfo(URI uri, int leaderId) {
 		this.uri = uri;
 		this.leaderId = leaderId;
 	}
-	
+
 	public int getLeaderId() {
 		return leaderId;
 	}
-	
+
 	public URI getUri() {
 		return uri;
 	}
@@ -35,5 +34,5 @@ public class LeaderInfo {
 	@Override
 	public boolean equals(Object obj) {
 		return this.hashCode() == obj.hashCode();
-	}	
+	}
 }
