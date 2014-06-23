@@ -37,7 +37,7 @@ public class Configuration {
 
 	public static final String KAFKA_BLACKLIST_TOPIC = "kafka.blacklist.topics";
 	public static final String KAFKA_WHITELIST_TOPIC = "kafka.whitelist.topics";
-	public static final String KAFKA_WHITELIST_TOPIC_STRICT = "kafa.whitelist.topic.strict";
+	public static final String KAFKA_WHITELIST_TOPIC_STRICT = "kafka.whitelist.topic.strict";
 
 	public static final String KAFKA_MOVE_TO_LAST_OFFSET_LIST = "kafka.move.to.last.offset.list";
 
