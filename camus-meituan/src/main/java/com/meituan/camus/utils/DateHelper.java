@@ -1,6 +1,7 @@
 package com.meituan.camus.utils;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -168,6 +169,12 @@ public class DateHelper {
 
 		return result;
 	}
+
+	public static String toTimeString(long timeMillis){
+		Date date = new Date(timeMillis);
+		SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
+		return sdf.format(date);
+	}
 	
 	public static int[] toTimeArray(long timeMillis)
 	{
@@ -276,7 +283,7 @@ public class DateHelper {
 	}
 
 	/** Return the day after the given date.
-	 * @param date A string of the format yyyymmdd.
+	 * @param yyyymmdd A string of the format yyyymmdd.
 	 */
 	public static String dayAfter(String yyyymmdd)
 	{
@@ -291,7 +298,7 @@ public class DateHelper {
 	}
 
 	/** Return the day before the given date.
-	 * @param date A string of the format yyyymmdd.
+	 * @param yyyymmdd A string of the format yyyymmdd.
 	 */
 	public static String dayBefore(String yyyymmdd)
 	{

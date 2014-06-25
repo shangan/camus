@@ -34,6 +34,7 @@ public class MeituanExecutionSelector {
 		if(deltHourStr != null){
 			currentTimeMillis -= DateHelper.HOUR_TIME_MILLIS * Integer.valueOf(deltHourStr);
 		}
+		log.info("history execution target time: " + DateHelper.toTimeString(currentTimeMillis));
 
 		for(FileStatus f : executions){
 			long modifyTime = f.getModificationTime();
