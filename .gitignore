@@ -20,6 +20,7 @@ target
 **/test-output/
 **/.idea
 .idea
+.DS_Store
 
 # target dirs
 camus-api/target/

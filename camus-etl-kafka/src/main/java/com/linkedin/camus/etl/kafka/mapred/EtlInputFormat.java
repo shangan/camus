@@ -366,8 +366,14 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 		});
 
 		writeRequests(finalRequests, context);
-		Map<EtlRequest, EtlKey> offsetKeys = getPreviousOffsets(
-				FileInputFormat.getInputPaths(context), context);
+		boolean reload = context.getConfiguration().getBoolean(Configuration.ETL_RELOAD, false);
+		Map<EtlRequest, EtlKey> offsetKeys = new HashMap<EtlRequest, EtlKey>();
+		if(reload){
+			 log.info("Etl reload, will not read previous offsets");
+		}else{
+			offsetKeys = getPreviousOffsets(
+					FileInputFormat.getInputPaths(context), context);
+		}
 		Set<String> moveLatest = getMoveToLatestTopicsSet(context);
 		for (EtlRequest request : finalRequests) {
 			if (moveLatest.contains(request.getTopic())
@@ -385,7 +391,13 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
             if (key != null && request.getOffset() <= 0) {
                 log.info("Current offset is set to previous offset: " + key.getOffset());
                 request.setOffset(key.getOffset());
-            }
+            }else{
+				// if there is no execution history, move to the earliest offset
+				if(! reload){
+					log.warn("No exection history, move to the earliest offset");
+				}
+				request.setOffset(request.getEarliestOffset());
+			}
 
 			if (request.getEarliestOffset() > request.getOffset()
 					|| request.getOffset() > request.getLastOffset()) {
