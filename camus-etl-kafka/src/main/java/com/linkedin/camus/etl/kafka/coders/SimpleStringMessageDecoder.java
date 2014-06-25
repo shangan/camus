@@ -23,7 +23,7 @@ public class SimpleStringMessageDecoder extends MessageDecoder<byte[], String> {
     DELTA_MILLIS = Long.valueOf(
             props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "0"));
     int ignoreMin = Integer.valueOf(
-            props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS_IGNORE, "60"));
+            props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS_IGNORE_MIN, "10"));
     Calendar calendar = Calendar.getInstance();
     int minute = calendar.get(Calendar.MINUTE);
     if(minute > ignoreMin){

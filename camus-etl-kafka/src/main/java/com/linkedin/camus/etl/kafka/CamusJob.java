@@ -3,6 +3,7 @@ package com.linkedin.camus.etl.kafka;
 import com.linkedin.camus.etl.kafka.common.*;
 import com.linkedin.camus.etl.kafka.mapred.EtlInputFormat;
 import com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat;
+import com.meituan.camus.etl.MeituanExecutionSelector;
 import org.apache.commons.cli.*;
 import org.apache.commons.cli.Options;
 import org.apache.hadoop.conf.Configuration;
@@ -225,12 +226,16 @@ public class CamusJob extends Configured implements Tool {
 		// determining most recent execution and using as the starting point for
 		// this execution
 		if (executions.length > 0) {
-			Path previous = executions[executions.length - 1].getPath();
+			FileStatus previousExecution = MeituanExecutionSelector.select(props, executions);
+			if(previousExecution == null){
+				log.error("No invalid previous execution");
+				throw new Exception("No invalid previous execution");
+			}
+			Path previous = previousExecution.getPath();
 			FileInputFormat.setInputPaths(job, previous);
 			log.info("Previous execution: " + previous.toString());
 		} else {
-			System.out
-					.println("No previous execution, all topics pulled from earliest available offset");
+			log.warn("No previous execution, all topics pulled from earliest available offset");
 		}
 
 		// creating new execution dir. offsets, error_logs, and count files will

@@ -202,8 +202,8 @@ public class EtlRequest implements Writable {
     @Override
     public String toString() {
         return topic + "\turi:" + (uri != null ? uri.toString() : "") + "\tleader:" + leaderId
-                + "\tpartition:" + partition + "\toffset:" + offset + "\tlatest_offset:"
-                + getLastOffset();
+                + "\tpartition:" + partition + "\tearliest_offset:" + earliestOffset + "\toffset:"
+				+ offset + "\tlatest_offset:" + getLastOffset();
     }
 
   @Override
