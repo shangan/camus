@@ -13,34 +13,36 @@ import java.util.Properties;
  * Created by chenshangan on 14-5-15.
  */
 public class SimpleStringMessageDecoder extends MessageDecoder<byte[], String> {
-  private final static Logger logger = Logger.getLogger(SimpleStringMessageDecoder.class);
-  private long DELTA_MILLIS = 0;
-  private boolean ignoreDeltaMillis = false;
-  @Override
-  public void init(Properties props, String topicName) {
-    super.init(props, topicName);
+	private final static Logger logger = Logger.getLogger(SimpleStringMessageDecoder.class);
+	private long DELTA_MILLIS = 0;
+	private boolean ignoreDeltaMillis = false;
+	private long currentTimeMillis;
+	@Override
+	public void init(Properties props, String topicName) {
+		super.init(props, topicName);
+		currentTimeMillis = System.currentTimeMillis();
+		DELTA_MILLIS = Long.valueOf(
+				props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "60"));
+		int ignoreMin = Integer.valueOf(
+				props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS_IGNORE_MIN, "60"));
+		Calendar calendar = Calendar.getInstance();
+		int minute = calendar.get(Calendar.MINUTE);
+		if (minute > ignoreMin) {
+			ignoreDeltaMillis = true;
+		}
+	}
 
-    DELTA_MILLIS = Long.valueOf(
-            props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "0"));
-    int ignoreMin = Integer.valueOf(
-            props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS_IGNORE_MIN, "10"));
-    Calendar calendar = Calendar.getInstance();
-    int minute = calendar.get(Calendar.MINUTE);
-    if(minute > ignoreMin){
-      ignoreDeltaMillis = true;
-    }
-  }
-  @Override
-  public CamusWrapper<String> decode(byte[] payload) {
+	@Override
+	public CamusWrapper<String> decode(byte[] payload) {
 
-    String payloadString = new String(payload);
-    long timestamp = System.currentTimeMillis();
-    if(! ignoreDeltaMillis){
-      timestamp -= DELTA_MILLIS;
-    }
-    return new CamusWrapper<String>(payloadString, timestamp);
+		String payloadString = new String(payload);
+		long timestamp = currentTimeMillis;
+		if (!ignoreDeltaMillis) {
+			timestamp -= DELTA_MILLIS;
+		}
+		return new CamusWrapper<String>(payloadString, timestamp);
 
 
-  }
+	}
 
 }

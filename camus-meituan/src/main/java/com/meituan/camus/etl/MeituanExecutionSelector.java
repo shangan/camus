@@ -5,6 +5,9 @@ import com.meituan.camus.utils.DateHelper;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.log4j.Logger;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 
 /**
@@ -34,14 +37,25 @@ public class MeituanExecutionSelector {
 		if(deltHourStr != null){
 			currentTimeMillis -= DateHelper.HOUR_TIME_MILLIS * Integer.valueOf(deltHourStr);
 		}
+		log.info("History execution target time: " + DateHelper.toTimeString(currentTimeMillis));
+
+		String dateFormat = props.getProperty(Configuration.ETL_OUTPUT_FILE_DATETIME_FORMAT, "YYYY-MM-dd-HH-mm-ss");
+		SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
 
 		for(FileStatus f : executions){
-			long modifyTime = f.getModificationTime();
-			if(DateHelper.isSameDay(modifyTime, currentTimeMillis)){
-				if(DateHelper.hour(modifyTime) == DateHelper.hour(currentTimeMillis)){
-					return f;
+			String pathName = f.getPath().getName();
+			try {
+				Date date = sdf.parse(pathName);
+				long createTimeMillis = date.getTime();
+				if(DateHelper.isSameDay(createTimeMillis, currentTimeMillis)){
+					if(DateHelper.hour(createTimeMillis) == DateHelper.hour(currentTimeMillis)){
+						return f;
+					}
 				}
+			} catch (ParseException e) {
+				log.warn("Incorrect time format, path: " + f.getPath().toString());
 			}
+
 		}
 
 		return null;
