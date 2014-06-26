@@ -242,7 +242,7 @@ public class CamusJob extends Configured implements Tool {
 		// be written to this directory. data is not written to the
 		// output directory in a normal run, but instead written to the
 		// appropriate date-partitioned subdir in camus.destination.path
-		String dateTimeFormatStr = props.getProperty(ETL_OUTPUT_FILE_DATETIME_FORMAT, "YYYY-MM-dd-HH-mm-ss");
+		String dateTimeFormatStr = props.getProperty(ETL_OUTPUT_FILE_DATETIME_FORMAT, "yyyy-MM-dd-HH-mm-ss");
 		DateTimeFormatter dateFmt = DateUtils.getDateTimeFormatter(
 				dateTimeFormatStr, DateTimeZone.forID(props.getProperty(ETL_DEFAULT_TIMEZONE, "Asia/Shanghai")));
 		Path newExecutionOutput = new Path(execBasePath,

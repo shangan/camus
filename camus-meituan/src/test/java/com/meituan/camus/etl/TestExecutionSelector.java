@@ -11,6 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Properties;
 
@@ -53,26 +55,35 @@ public class TestExecutionSelector {
 		}
 	}
 
-	// TODO: find a way to create file with different modify time
 	@Test
-	public void testDeltaReload() throws IOException {
+	public void testDeltaReload() throws IOException, ParseException {
 		Properties props = new Properties();
-		props.setProperty(Configuration.ETL_EXECUTION_DELTA_HOUR, "1");
+		props.setProperty(Configuration.ETL_EXECUTION_DELTA_HOUR, "2");
 		org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
 		FileSystem fs = FileSystem.get(conf);
 		Path dirPath = new Path(testPath);
 		fs.delete(dirPath, true);
 		fs.mkdirs(dirPath);
-		for(int i = 0; i < 10; i++){
-			Path p = new Path(dirPath, "p" + i);
+		String dateFormat = props.getProperty(Configuration.ETL_OUTPUT_FILE_DATETIME_FORMAT, "yyyy-MM-dd-HH-mm-ss");
+		SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+		Calendar calendar = Calendar.getInstance();
+		int hour = calendar.get(Calendar.HOUR_OF_DAY);
+		Path expected = null;
+		for(int i = 0; i < 24; i++){
+			calendar.set(Calendar.HOUR_OF_DAY, i);
+			Path p = new Path(dirPath, sdf.format(calendar.getTime()));
 			fs.create(p);
 			fs.close();
+			if( i == hour - 2){
+				expected = p;
+			}
 		}
 
 		FileStatus[] executions = fs.listStatus(dirPath);
 
 		FileStatus previous = MeituanExecutionSelector.select(props, executions);
-		Assert.assertEquals(previous, null);
+		Assert.assertNotNull(previous);
+		Assert.assertEquals(previous.getPath(), expected);
 
 	}
 }
