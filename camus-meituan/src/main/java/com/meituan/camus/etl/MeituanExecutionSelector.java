@@ -39,7 +39,7 @@ public class MeituanExecutionSelector {
 		}
 		log.info("History execution target time: " + DateHelper.toTimeString(currentTimeMillis));
 
-		String dateFormat = props.getProperty(Configuration.ETL_OUTPUT_FILE_DATETIME_FORMAT, "YYYY-MM-dd-HH-mm-ss");
+		String dateFormat = props.getProperty(Configuration.ETL_OUTPUT_FILE_DATETIME_FORMAT, "yyyy-MM-dd-HH-mm-ss");
 		SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
 
 		for(FileStatus f : executions){
@@ -49,6 +49,7 @@ public class MeituanExecutionSelector {
 				long createTimeMillis = date.getTime();
 				if(DateHelper.isSameDay(createTimeMillis, currentTimeMillis)){
 					if(DateHelper.hour(createTimeMillis) == DateHelper.hour(currentTimeMillis)){
+						log.info("find path: " + f.getPath());
 						return f;
 					}
 				}
