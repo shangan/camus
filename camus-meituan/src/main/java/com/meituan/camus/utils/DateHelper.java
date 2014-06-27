@@ -172,7 +172,7 @@ public class DateHelper {
 
 	public static String toTimeString(long timeMillis){
 		Date date = new Date(timeMillis);
-		SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		return sdf.format(date);
 	}
 	
