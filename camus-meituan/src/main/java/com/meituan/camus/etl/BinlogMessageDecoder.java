@@ -1,4 +1,4 @@
-package com.meituan.camus.etl.kafka.coders;
+package com.meituan.camus.etl;
 
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.coders.MessageDecoder;
@@ -63,11 +63,11 @@ public class BinlogMessageDecoder extends MessageDecoder<byte[], String> {
 
 		int rowCnt = 0;
 		for (BinlogRow row : binlogEntry.getRowDatas()) {
-            eventID += "-" + rowCnt;
+            //eventID += "-" + rowCnt;
 			//if (rowCnt > 0) {
 		//		sb.append(FIELDS_SEPARATOR);
 		//	}
-            StringBuilder sb = new StringBuilder(eventID);
+            StringBuilder sb = new StringBuilder(eventID+"-"+rowCnt);
             sb.append(tmpsb.toString());
 			Map<String, BinlogColumn> columns = row.getCurColumns();
 			int count = 0;
