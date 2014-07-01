@@ -375,6 +375,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 					FileInputFormat.getInputPaths(context), context);
 		}
 		Set<String> moveLatest = getMoveToLatestTopicsSet(context);
+		Map<EtlRequest, EtlKey> existOffsetKeys = new HashMap<EtlRequest, EtlKey>();
 		for (EtlRequest request : finalRequests) {
 			if (moveLatest.contains(request.getTopic())
 					|| moveLatest.contains("all")) {
@@ -387,10 +388,12 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 			EtlKey key = offsetKeys.get(request);
 
-            // use previous offset when current offset is the default value 0
-            if (key != null && request.getOffset() <= 0) {
-                log.info("Current offset is set to previous offset: " + key.getOffset());
-                request.setOffset(key.getOffset());
+            if (key != null) {
+				// use previous offset when current offset is the default value 0, otherwise use specific offset
+				if(request.getOffset() <= 0){
+					log.info("Current offset is set to previous offset: " + key.getOffset());
+					request.setOffset(key.getOffset());
+				}
             }else{
 				// if there is no execution history, move to the earliest offset
 				if(! reload){
@@ -404,11 +407,11 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 				if(context.getConfiguration().get(ETL_FAIL_INVALID_OFFSET, "False").equalsIgnoreCase("True")) {
 					zabbixSender.send(Configuration.ZABBIX_ITEM_COMMON_KEY,
-						String.format("ERROR, Job[%s], invalid offset, topic[%s] current offset[%d], valid offsets[%d,%d]",
-						context.getConfiguration().get(CamusJob.CAMUS_JOB_NAME), request.getTopic(),
+						String.format("ERROR, Job[%s], invalid offset, topic[%s] partition[%d] current offset[%d], valid offsets[%d,%d]",
+						context.getConfiguration().get(CamusJob.CAMUS_JOB_NAME), request.getTopic(), request.getPartition(),
 						request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
-					log.error(String.format("Topic[%s] current offset[%d] is out of the range of valid kafka offsets[%d,%d]. Exit the program",
-							  request.getTopic(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
+					log.error(String.format("Topic[%s] partition[%d] current offset[%d] is out of the range of valid kafka offsets[%d,%d]. Exit the program",
+							  request.getTopic(), request.getPartition(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
 					return null;
 					//System.exit(-1);
 				}
@@ -423,16 +426,19 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 					log.error("Moving to the earliest offset available");
 				}
 				request.setOffset(request.getEarliestOffset());
-				offsetKeys.put(
-						request,
-						new EtlKey(request.getTopic(), request.getLeaderId(),
-								request.getPartition(), 0, request
-										.getLastOffset()));
+
 			}
+			// only save existed partition info as partition can be increased or reduced and
+			// should use previous offset not the latest offset
+			existOffsetKeys.put(
+					request,
+					new EtlKey(request.getTopic(), request.getLeaderId(),
+							request.getPartition(), 0, request
+							.getOffset()));
 			log.info(request);
 		}
 
-		writePrevious(offsetKeys.values(), context);
+		writePrevious(existOffsetKeys.values(), context);
 
 		CamusJob.stopTiming("getSplits");
 		CamusJob.startTiming("hadoop");

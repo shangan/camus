@@ -41,7 +41,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
     private boolean skipSchemaErrors = false;
     private MessageDecoder decoder;
     private final BytesWritable msgValue = new BytesWritable();
-    private final BytesWritable msgKey = new BytesWritable();
+    private BytesWritable msgKey = new BytesWritable();
     private final EtlKey key = new EtlKey();
     private CamusWrapper value;
 
@@ -248,6 +248,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
                                 + message.checksum() + ". Expected " + key.getChecksum(),
                                 key.getOffset());
                     }
+					msgKey = new BytesWritable();
 
                     long tempTime = System.currentTimeMillis();
                     CamusWrapper wrapper;

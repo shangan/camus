@@ -3,8 +3,10 @@ package com.linkedin.camus.etl.kafka.common;
 import com.meituan.camus.bean.PartitionInfo;
 import com.meituan.camus.bean.TopicInfo;
 import com.meituan.camus.conf.Configuration;
+import com.meituan.camus.etl.MeituanExecutionSelector;
 import com.meituan.camus.utils.HdfsUtil;
 import com.meituan.camus.utils.KafkaOffsetUtil;
+import com.meituan.hadoop.SecurityUtils;
 import org.apache.commons.cli.*;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -16,6 +18,7 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.security.PrivilegedAction;
 import java.util.Properties;
 
 /**
@@ -46,11 +49,15 @@ public class CamusUtil {
 				props.getProperty(Configuration.CAMUS_JOB_NAME));
 //        Path execHistory = new Path(execHistoryStr);
 		org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration(true);
-		HdfsUtil hdfsUtil = new HdfsUtil(conf);
-		FileStatus[] fileStatuses = hdfsUtil.getDirectoryFromHdfs(execHistoryStr);
-		if (fileStatuses.length > 0) {
-			Path lastExecutionPath = fileStatuses[fileStatuses.length - 1].getPath();
-			FileSystem fs = lastExecutionPath.getFileSystem(conf);
+		FileSystem fs = FileSystem.get(conf);
+		FileStatus[] executions = fs.listStatus(new Path(execHistoryStr));
+		if (executions.length > 0) {
+			FileStatus execution = MeituanExecutionSelector.select(props, fs, executions, false);
+			if(execution == null){
+				log.error("no valid execution history");
+				return topicInfo;
+			}
+			Path lastExecutionPath = execution.getPath();
 			log.info("Last execution path: " + lastExecutionPath.toString());
 
 			for (FileStatus f : fs.listStatus(lastExecutionPath, new OffsetFileFilter())) {
@@ -91,7 +98,7 @@ public class CamusUtil {
 
 	public static void main(String[] args) throws Exception {
 
-		Properties props = new Properties();
+		final Properties props = new Properties();
 		Options options = new Options();
 
 		options.addOption("P", true, "external properties filename");
@@ -117,13 +124,23 @@ public class CamusUtil {
 
 		props.putAll(cmd.getOptionProperties("D"));
 
+		SecurityUtils.doAs("hadoop-data/_HOST@SANKUAI.COM", "/etc/hadoop/keytabs/hadoop-data.keytab",
+				null, new PrivilegedAction<Object>() {
+			@Override
+			public Object run() {
 
-		CamusUtil util = new CamusUtil(props);
-
-		TopicInfo topicInfo = util.getTopicInfo(props.getProperty("topic"));
-		if (topicInfo != null) {
-			System.out.println(topicInfo.toString());
-		}
+				try {
+					CamusUtil util = new CamusUtil(props);
+					TopicInfo topicInfo = util.getTopicInfo(props.getProperty("topic"));
+					if (topicInfo != null) {
+						System.out.println(topicInfo.toString());
+					}
+				} catch (Exception e) {
+					e.printStackTrace(System.err);
+				}
+				return null;
+			}
+		});
 
 
 	}

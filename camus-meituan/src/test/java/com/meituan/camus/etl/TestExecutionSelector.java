@@ -58,7 +58,8 @@ public class TestExecutionSelector {
 	@Test
 	public void testDeltaReload() throws IOException, ParseException {
 		Properties props = new Properties();
-		props.setProperty(Configuration.ETL_EXECUTION_DELTA_HOUR, "2");
+		int delta = 0;
+		props.setProperty(Configuration.ETL_EXECUTION_DELTA_HOUR, String.valueOf(delta));
 		org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
 		FileSystem fs = FileSystem.get(conf);
 		Path dirPath = new Path(testPath);
@@ -70,18 +71,19 @@ public class TestExecutionSelector {
 		int hour = calendar.get(Calendar.HOUR_OF_DAY);
 		Path expected = null;
 		for(int i = 0; i < 24; i++){
+
 			calendar.set(Calendar.HOUR_OF_DAY, i);
 			Path p = new Path(dirPath, sdf.format(calendar.getTime()));
 			fs.create(p);
 			fs.close();
-			if( i == hour - 2){
+			if( i == hour - delta){
 				expected = p;
 			}
 		}
 
 		FileStatus[] executions = fs.listStatus(dirPath);
 
-		FileStatus previous = MeituanExecutionSelector.select(props, executions);
+		FileStatus previous = MeituanExecutionSelector.select(props, fs, executions);
 		Assert.assertNotNull(previous);
 		Assert.assertEquals(previous.getPath(), expected);
 

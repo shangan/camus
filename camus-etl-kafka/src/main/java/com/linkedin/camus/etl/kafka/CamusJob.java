@@ -226,14 +226,20 @@ public class CamusJob extends Configured implements Tool {
 		// determining most recent execution and using as the starting point for
 		// this execution
 		if (executions.length > 0) {
-			FileStatus previousExecution = MeituanExecutionSelector.select(props, executions);
+			boolean reload = job.getConfiguration().getBoolean(com.meituan.camus.conf.Configuration.ETL_RELOAD, false);
+
+			FileStatus previousExecution = MeituanExecutionSelector.select(props, fs, executions, true);
 			if(previousExecution == null){
-				log.error("No invalid previous execution");
-				throw new Exception("No invalid previous execution");
+				if(!reload){
+					log.error("No invalid previous execution");
+					throw new Exception("No invalid previous execution");
+				}
+			}else{
+				Path previous = previousExecution.getPath();
+				FileInputFormat.setInputPaths(job, previous);
+				log.info("Previous execution: " + previous.toString());
 			}
-			Path previous = previousExecution.getPath();
-			FileInputFormat.setInputPaths(job, previous);
-			log.info("Previous execution: " + previous.toString());
+
 		} else {
 			log.warn("No previous execution, all topics pulled from earliest available offset");
 		}

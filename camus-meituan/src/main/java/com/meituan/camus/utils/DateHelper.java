@@ -94,11 +94,8 @@ public class DateHelper {
 	 */
 	public static long dayStartTimeMillis(String yyyymmdd)
 	{
-		try {
-			return dayStartTimeMillis(Integer.valueOf(yyyymmdd));
-		} catch (Exception e) {
-			return 0;
-		}
+		return dayStartTimeMillis(Integer.valueOf(yyyymmdd));
+
 	}
 
 	public static long todayStartTimeMillis()
