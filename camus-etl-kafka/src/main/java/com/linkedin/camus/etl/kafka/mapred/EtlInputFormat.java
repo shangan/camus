@@ -437,8 +437,14 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 							.getOffset()));
 			log.info(request);
 		}
-
-		writePrevious(existOffsetKeys.values(), context);
+		if(existOffsetKeys.size() > 0){
+			// sometime existOffset might not exist as topicMeta initialization failure
+			writePrevious(existOffsetKeys.values(), context);
+		}else{
+			// each history has an new entry act as previous history for next run
+			// make sure it record the right info
+			writePrevious(offsetKeys.values(), context);
+		}
 
 		CamusJob.stopTiming("getSplits");
 		CamusJob.startTiming("hadoop");
