@@ -318,12 +318,16 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
                 log.info("Records read : " + count);
                 count = 0;
                 reader = null;
-            } catch (Throwable t) {
+            } catch (IOException t) {
                 Exception e = new Exception(t.getLocalizedMessage(), t);
                 e.setStackTrace(t.getStackTrace());
                 mapperContext.write(key, new ExceptionWritable(e));
-                reader = null;
-                continue;
+//                reader = null;
+//                continue;
+                // fail fast when exception occurs
+                log.error("Exception occurs while reading record", t);
+                throw t;
+
             }
         }
     }
