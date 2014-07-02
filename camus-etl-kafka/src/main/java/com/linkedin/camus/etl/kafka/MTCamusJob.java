@@ -26,8 +26,10 @@ public class MTCamusJob extends CamusJob {
 	private final static int ZKLOCK_EXIST = 1;
 	private final static int ZKLOCK_FAIL = 2;
 	private final static int ZKLOCK_SUCCESS = 3;
+	private final static String PATH_SEPARATOR = "/";
 
 	private Properties localProps;
+	private String zkBasePath = "";
 	private String zkLockPath = "";
 	private ZkClient zkClient = null;
 
@@ -36,8 +38,12 @@ public class MTCamusJob extends CamusJob {
 		localProps = new Properties();
 		loadConf(args);
 
-		zkLockPath = localProps.getProperty(Configuration.ZOOKEEPER_BASE_PATH)
-				+ localProps.getProperty(Configuration.CAMUS_JOB_NAME);
+		zkBasePath = localProps.getProperty(Configuration.ZOOKEEPER_BASE_PATH);
+		if(zkBasePath.endsWith(PATH_SEPARATOR)){
+			zkBasePath = zkBasePath.substring(0, zkBasePath.length() - 1);
+		}
+
+		zkLockPath = zkBasePath + PATH_SEPARATOR + localProps.getProperty(Configuration.CAMUS_JOB_NAME);
 	}
 
 	private ZkClient createZkClient() throws IOException {
@@ -53,6 +59,10 @@ public class MTCamusJob extends CamusJob {
 
 		try {
 			zkClient = createZkClient();
+			if(! zkClient.exists(zkBasePath)){
+				// base path should be create automatically, otherwise ephemeral node can not be created
+				zkClient.createPersistent(zkBasePath, true);
+			}
 			if (zkClient.exists(zkLockPath)) {
 				logger.error("zklock exist: " + zkLockPath);
 				return ZKLOCK_EXIST;

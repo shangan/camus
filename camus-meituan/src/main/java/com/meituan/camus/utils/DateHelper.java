@@ -94,11 +94,8 @@ public class DateHelper {
 	 */
 	public static long dayStartTimeMillis(String yyyymmdd)
 	{
-		try {
-			return dayStartTimeMillis(Integer.valueOf(yyyymmdd));
-		} catch (Exception e) {
-			return 0;
-		}
+		return dayStartTimeMillis(Integer.valueOf(yyyymmdd));
+
 	}
 
 	public static long todayStartTimeMillis()
@@ -172,7 +169,7 @@ public class DateHelper {
 
 	public static String toTimeString(long timeMillis){
 		Date date = new Date(timeMillis);
-		SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		return sdf.format(date);
 	}
 	

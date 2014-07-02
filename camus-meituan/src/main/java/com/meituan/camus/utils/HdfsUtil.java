@@ -76,5 +76,9 @@ public class HdfsUtil {
 		return fileStatuses;
 	}
 
+	public FileSystem getFileSystem() throws IOException {
+		return FileSystem.get(conf);
+	}
+
 
 }
