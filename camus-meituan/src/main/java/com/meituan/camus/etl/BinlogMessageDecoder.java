@@ -2,20 +2,23 @@ package com.meituan.camus.etl;
 
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.coders.MessageDecoder;
+import org.apache.log4j.Logger;
+import java.util.Properties;
+import com.meituan.camus.conf.Configuration;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+
 import com.meituan.data.binlog.BinlogEntry;
 import com.meituan.data.binlog.BinlogEntryUtil;
 import com.meituan.data.binlog.BinlogColumn;
 import com.meituan.data.binlog.BinlogRow;
-import org.apache.log4j.Logger;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
 
 
 /**
  * Created by chenshangan on 14-5-15.
  */
-public class BinlogMessageDecoder extends MessageDecoder<byte[], String> {
+public class BinlogMessageDecoder extends MeituanMessageDecoder {
     
     private final static Logger logger = Logger.getLogger(BinlogMessageDecoder.class);
 	public final static String FIELDS_SEPARATOR = "\001";
@@ -26,12 +29,19 @@ public class BinlogMessageDecoder extends MessageDecoder<byte[], String> {
 	public final static String COLUMN_VALUE_INTERNAL_SEPARATOR = "\004";
 	public final static String LINE_SEPARATOR = "\n";
 
+    public void init(Properties props, String topicName) {
+        super.init(props, topicName);
+    }
+
     @Override
     public CamusWrapper<String> decode(byte[] payload) {
 
         BinlogEntry binlogEntry =BinlogEntryUtil.serializeToBean(payload);
         String payloadString = binlogToHDFS(binlogEntry);
-        long timestamp = System.currentTimeMillis();
+        long timestamp = beginTimeMillis;
+        if (!ignoreDeltaMillis) {
+            timestamp -= DELTA_MILLIS;
+        }
         return new CamusWrapper<String>(payloadString, timestamp);
 
     }
