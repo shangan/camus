@@ -41,7 +41,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
     private boolean skipSchemaErrors = false;
     private MessageDecoder decoder;
     private final BytesWritable msgValue = new BytesWritable();
-    private final BytesWritable msgKey = new BytesWritable();
+    private BytesWritable msgKey = new BytesWritable();
     private final EtlKey key = new EtlKey();
     private CamusWrapper value;
 
@@ -248,6 +248,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
                                 + message.checksum() + ". Expected " + key.getChecksum(),
                                 key.getOffset());
                     }
+					msgKey = new BytesWritable();
 
                     long tempTime = System.currentTimeMillis();
                     CamusWrapper wrapper;
@@ -317,12 +318,16 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
                 log.info("Records read : " + count);
                 count = 0;
                 reader = null;
-            } catch (Throwable t) {
+            } catch (IOException t) {
                 Exception e = new Exception(t.getLocalizedMessage(), t);
                 e.setStackTrace(t.getStackTrace());
                 mapperContext.write(key, new ExceptionWritable(e));
-                reader = null;
-                continue;
+//                reader = null;
+//                continue;
+                // fail fast when exception occurs
+                log.error("Exception occurs while reading record", t);
+                throw t;
+
             }
         }
     }
