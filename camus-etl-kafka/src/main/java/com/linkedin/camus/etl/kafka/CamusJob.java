@@ -231,7 +231,7 @@ public class CamusJob extends Configured implements Tool {
 			FileStatus previousExecution = MeituanExecutionSelector.select(props, fs, executions, true);
 			if(previousExecution == null){
 				if(!reload){
-					log.error("No invalid previous execution");
+					log.error("No valid previous execution");
 					throw new Exception("No invalid previous execution");
 				}
 			}else{
