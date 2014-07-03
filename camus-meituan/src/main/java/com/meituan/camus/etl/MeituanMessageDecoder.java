@@ -21,7 +21,7 @@ public abstract class MeituanMessageDecoder extends MessageDecoder<byte[], Strin
 		super.init(props, topicName);
 		beginTimeMillis = System.currentTimeMillis();
 		DELTA_MILLIS = Long.valueOf(
-				props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "60"));
+				props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "3600000"));
 		int ignoreMin = Integer.valueOf(
 				props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS_IGNORE_MIN, "60"));
 		Calendar calendar = Calendar.getInstance();
