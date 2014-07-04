@@ -62,6 +62,8 @@ public class Configuration {
 	public static final String ETL_EXECUTION_DELTA_HOUR = "etl.execution.delta.hour";
 	public static final String ETL_EXECUTION_CURRENT_DATE = "etl.execution.current.date";
 
+	public static final long CURRENT_TIMESTAMP = System.currentTimeMillis();
+
 
 	public static final String ZABBIX_ITEM_COMMON_KEY = "camus.etl.failinfo";
 	public static final String CAMUS_JOB_NAME_VARIABLE = "{" + CAMUS_JOB_NAME + "}";
