@@ -35,8 +35,11 @@ import org.joda.time.format.DateTimeFormatter;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+
+import com.meituan.camus.utils.DateHelper;
 
 public class CamusJob extends Configured implements Tool {
 
@@ -223,7 +226,12 @@ public class CamusJob extends Configured implements Tool {
 			fs.delete(stat.getPath(), true);
 		}
 
-		// determining most recent execution and using as the starting point for
+		String dateTimeFormatStr = props.getProperty(ETL_OUTPUT_FILE_DATETIME_FORMAT, "yyyy-MM-dd-HH-mm-ss");
+		DateTimeFormatter dateFmt = DateUtils.getDateTimeFormatter(
+				dateTimeFormatStr, DateTimeZone.forID(props.getProperty(ETL_DEFAULT_TIMEZONE, "Asia/Shanghai")));
+        SimpleDateFormat sdf = new SimpleDateFormat(dateTimeFormatStr);
+        Date historyExecutionDate = new Date();
+        // determining most recent execution and using as the starting point for
 		// this execution
 		if (executions.length > 0) {
 			boolean reload = job.getConfiguration().getBoolean(com.meituan.camus.conf.Configuration.ETL_RELOAD, false);
@@ -235,7 +243,8 @@ public class CamusJob extends Configured implements Tool {
 					throw new Exception("No valid previous execution");
 				}
 			}else{
-				Path previous = previousExecution.getPath();
+			    Path previous = previousExecution.getPath();
+                historyExecutionDate = sdf.parse(previous.getName());
 				FileInputFormat.setInputPaths(job, previous);
 				log.info("Previous execution: " + previous.toString());
 			}
@@ -248,14 +257,16 @@ public class CamusJob extends Configured implements Tool {
 		// be written to this directory. data is not written to the
 		// output directory in a normal run, but instead written to the
 		// appropriate date-partitioned subdir in camus.destination.path
-		String dateTimeFormatStr = props.getProperty(ETL_OUTPUT_FILE_DATETIME_FORMAT, "yyyy-MM-dd-HH-mm-ss");
-		DateTimeFormatter dateFmt = DateUtils.getDateTimeFormatter(
-				dateTimeFormatStr, DateTimeZone.forID(props.getProperty(ETL_DEFAULT_TIMEZONE, "Asia/Shanghai")));
 		Path newExecutionOutput = new Path(execBasePath,
 				new DateTime().toString(dateFmt));
 		FileOutputFormat.setOutputPath(job, newExecutionOutput);
 		log.info("New execution temp location: "
 				+ newExecutionOutput.toString());
+        Date newExecutionDate = sdf.parse(newExecutionOutput.getName());
+
+        if (DateHelper.isSameHour(historyExecutionDate.getTime(), newExecutionDate.getTime())){
+            job.getConfiguration().set(com.meituan.camus.conf.Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "0");
+        }
 
 		job.setInputFormatClass(EtlInputFormat.class);
 		job.setOutputFormatClass(EtlMultiOutputFormat.class);
