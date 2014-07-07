@@ -230,7 +230,7 @@ public class CamusJob extends Configured implements Tool {
 		DateTimeFormatter dateFmt = DateUtils.getDateTimeFormatter(
 				dateTimeFormatStr, DateTimeZone.forID(props.getProperty(ETL_DEFAULT_TIMEZONE, "Asia/Shanghai")));
         SimpleDateFormat sdf = new SimpleDateFormat(dateTimeFormatStr);
-        Date history_execution_date = new Date();
+        Date historyExecutionDate = new Date();
         // determining most recent execution and using as the starting point for
 		// this execution
 		if (executions.length > 0) {
@@ -244,7 +244,7 @@ public class CamusJob extends Configured implements Tool {
 				}
 			}else{
 			    Path previous = previousExecution.getPath();
-                history_execution_date = sdf.parse(previous.getName());
+                historyExecutionDate = sdf.parse(previous.getName());
 				FileInputFormat.setInputPaths(job, previous);
 				log.info("Previous execution: " + previous.toString());
 			}
@@ -264,7 +264,7 @@ public class CamusJob extends Configured implements Tool {
 				+ newExecutionOutput.toString());
         Date new_execution_date = sdf.parse(newExecutionOutput.getName());
 
-        if (DateHelper.isSameHour(history_execution_date.getTime(), new_execution_date.getTime())){
+        if (DateHelper.isSameHour(historyExecutionDate.getTime(), new_execution_date.getTime())){
             props.setProperty(com.meituan.camus.conf.Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "0");
         }
 
