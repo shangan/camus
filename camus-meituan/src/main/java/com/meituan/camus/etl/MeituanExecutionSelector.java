@@ -32,10 +32,10 @@ public class MeituanExecutionSelector {
 		}
 
 		String currentDateStr = props.getProperty(Configuration.ETL_EXECUTION_CURRENT_DATE);
-		String deltHourStr = props.getProperty(Configuration.ETL_EXECUTION_DELTA_HOUR);
-		String reload = props.getProperty(Configuration.ETL_RELOAD);
+		String deltaHourStr = props.getProperty(Configuration.ETL_EXECUTION_DELTA_HOUR);
+		String reloadStr = props.getProperty(Configuration.ETL_RELOAD);
 
-		if(currentDateStr == null && deltHourStr == null && reload == null){
+		if(currentDateStr == null && deltaHourStr == null && reloadStr == null){
 			return executions[executions.length - 1];
 		}
 
@@ -45,8 +45,8 @@ public class MeituanExecutionSelector {
 				currentTimeMillis = DateHelper.dayStartTimeMillis(currentDateStr);
 			}
 
-			if(deltHourStr != null){
-				currentTimeMillis -= DateHelper.HOUR_TIME_MILLIS * Integer.valueOf(deltHourStr);
+			if(deltaHourStr != null){
+				currentTimeMillis -= DateHelper.HOUR_TIME_MILLIS * Integer.valueOf(deltaHourStr);
 			}
 		}catch (Exception ex){
 			log.error("date format error");
@@ -58,26 +58,28 @@ public class MeituanExecutionSelector {
 		SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
 		int idx = -1;
 		FileStatus targetExecution = null;
-		for(FileStatus f : executions){
-			idx ++;
-			String pathName = f.getPath().getName();
-			if(pathName.endsWith(RELOAD_EXECUTION_SUFFIX)){
-				continue;
-			}
-			try {
-				Date date = sdf.parse(pathName);
-				long createTimeMillis = date.getTime();
-				if(DateHelper.isSameDay(createTimeMillis, currentTimeMillis)){
-					if(DateHelper.hour(createTimeMillis) == DateHelper.hour(currentTimeMillis)){
-						log.info("find path: " + f.getPath());
-						targetExecution = f;
-						break;
-					}
+		if(reloadStr == null || reloadStr.equalsIgnoreCase("false")){
+			for(FileStatus f : executions){
+				idx ++;
+				String pathName = f.getPath().getName();
+				if(pathName.endsWith(RELOAD_EXECUTION_SUFFIX)){
+					continue;
 				}
-			} catch (ParseException e) {
-				log.warn("Incorrect time format, path: " + f.getPath().toString());
-			}
+				try {
+					Date date = sdf.parse(pathName);
+					long createTimeMillis = date.getTime();
+					if(DateHelper.isSameDay(createTimeMillis, currentTimeMillis)){
+						if(DateHelper.hour(createTimeMillis) == DateHelper.hour(currentTimeMillis)){
+							log.info("find path: " + f.getPath());
+							targetExecution = f;
+							break;
+						}
+					}
+				} catch (ParseException e) {
+					log.warn("Incorrect time format, path: " + f.getPath().toString());
+				}
 
+			}
 		}
 
 		if(renameNewer){
@@ -95,7 +97,9 @@ public class MeituanExecutionSelector {
 	public static boolean renameHistoryExecution(FileSystem fs, FileStatus f) throws IOException {
 		Path source = f.getPath();
 		Path target = new Path(source.toString() + RELOAD_EXECUTION_SUFFIX);
-		fs.rename(source, target);
+		if(fs.exists(source)){
+			fs.rename(source, target);
+		}
 		return true;
 	}
 
