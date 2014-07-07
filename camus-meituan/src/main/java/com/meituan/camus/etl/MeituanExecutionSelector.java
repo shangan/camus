@@ -34,8 +34,12 @@ public class MeituanExecutionSelector {
 		String currentDateStr = props.getProperty(Configuration.ETL_EXECUTION_CURRENT_DATE);
 		String deltaHourStr = props.getProperty(Configuration.ETL_EXECUTION_DELTA_HOUR);
 		String reloadStr = props.getProperty(Configuration.ETL_RELOAD);
+		boolean reload = false;
+		if(reloadStr != null && reloadStr.equalsIgnoreCase("true")){
+			reload = true;
+		}
 
-		if(currentDateStr == null && deltaHourStr == null && reloadStr == null){
+		if(currentDateStr == null && deltaHourStr == null && (!reload)){
 			return executions[executions.length - 1];
 		}
 
@@ -58,7 +62,7 @@ public class MeituanExecutionSelector {
 		SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
 		int idx = -1;
 		FileStatus targetExecution = null;
-		if(reloadStr == null || reloadStr.equalsIgnoreCase("false")){
+		if(! reload){
 			for(FileStatus f : executions){
 				idx ++;
 				String pathName = f.getPath().getName();
