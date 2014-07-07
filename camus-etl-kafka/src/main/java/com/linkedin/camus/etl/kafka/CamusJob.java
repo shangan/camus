@@ -262,10 +262,10 @@ public class CamusJob extends Configured implements Tool {
 		FileOutputFormat.setOutputPath(job, newExecutionOutput);
 		log.info("New execution temp location: "
 				+ newExecutionOutput.toString());
-        Date new_execution_date = sdf.parse(newExecutionOutput.getName());
+        Date newExecutionDate = sdf.parse(newExecutionOutput.getName());
 
-        if (DateHelper.isSameHour(historyExecutionDate.getTime(), new_execution_date.getTime())){
-            props.setProperty(com.meituan.camus.conf.Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "0");
+        if (DateHelper.isSameHour(historyExecutionDate.getTime(), newExecutionDate.getTime())){
+            job.getConfiguration().set(com.meituan.camus.conf.Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "0");
         }
 
 		job.setInputFormatClass(EtlInputFormat.class);
