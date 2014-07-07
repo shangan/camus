@@ -232,7 +232,7 @@ public class CamusJob extends Configured implements Tool {
 			if(previousExecution == null){
 				if(!reload){
 					log.error("No valid previous execution");
-					throw new Exception("No invalid previous execution");
+					throw new Exception("No valid previous execution");
 				}
 			}else{
 				Path previous = previousExecution.getPath();

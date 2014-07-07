@@ -388,13 +388,13 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 			EtlKey key = offsetKeys.get(request);
 
-            if (key != null) {
+			if (key != null) {
 				// use previous offset when current offset is the default value 0, otherwise use specific offset
 				if(request.getOffset() <= 0){
 					log.info("Current offset is set to previous offset: " + key.getOffset());
 					request.setOffset(key.getOffset());
 				}
-            }else{
+			}else{
 				// if there is no execution history, move to the earliest offset
 				if(! reload){
 					log.warn("No exection history, move to the earliest offset");
