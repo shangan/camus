@@ -83,9 +83,13 @@ public class TestExecutionSelector {
 
 		FileStatus[] executions = fs.listStatus(dirPath);
 
-		FileStatus previous = MeituanExecutionSelector.select(props, fs, executions);
+		FileStatus previous = MeituanExecutionSelector.select(props, fs, executions, true);
 		Assert.assertNotNull(previous);
 		Assert.assertEquals(previous.getPath(), expected);
+
+		props.setProperty(Configuration.ETL_RELOAD, "true");
+		previous = MeituanExecutionSelector.select(props, fs, executions, true);
+		Assert.assertNull(previous);
 
 	}
 }

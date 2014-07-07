@@ -336,7 +336,10 @@ public class DateHelper {
 		return DateHelper.dayStartTimeMillis(day1) == DateHelper.dayStartTimeMillis(day2);
 	}
 
-	
+    public static boolean isSameHour(long hourTimeMillis1, long hourTimeMillis2){
+        return DateHelper.hour(hourTimeMillis1) == DateHelper.hour(hourTimeMillis2);
+    }
+
 	public static void main(String args[])
 	{
 		System.out.println("Hour: " + hour());

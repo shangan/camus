@@ -19,7 +19,7 @@ public abstract class MeituanMessageDecoder extends MessageDecoder<byte[], Strin
 	@Override
 	public void init(Properties props, String topicName) {
 		super.init(props, topicName);
-		beginTimeMillis = System.currentTimeMillis();
+		beginTimeMillis = Configuration.CURRENT_TIMESTAMP;
 		DELTA_MILLIS = Long.valueOf(
 				props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "3600000"));
 		int ignoreMin = Integer.valueOf(
