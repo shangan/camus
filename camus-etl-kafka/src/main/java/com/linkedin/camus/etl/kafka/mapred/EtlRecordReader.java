@@ -243,10 +243,13 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
                         message = new Message(bytes, keyBytes);
                     }
                     long checksum = key.getChecksum();
+                    boolean invalidChecksum = false;
                     if (checksum != message.checksum()) {
-                        throw new ChecksumException("Invalid message checksum "
-                                + message.checksum() + ". Expected " + key.getChecksum(),
-                                key.getOffset());
+                        invalidChecksum = true;
+//                        throw new ChecksumException("Invalid message checksum "
+//                                + message.checksum() + ". Expected " + key.getChecksum(),
+//                                key.getOffset());
+                        log.error(String.format("Invalid message checksum %d, Expected %d. topic[%s], partition[%d] offset[%d]",                            message.checksum(), key.getChecksum(), key.getTopic(), key.getPartition(), key.getOffset()));
                     }
 					msgKey = new BytesWritable();
 
@@ -269,6 +272,10 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
                         mapperContext.write(key, new ExceptionWritable(new RuntimeException(
                                 "null record")));
                         continue;
+                    }
+
+                    if(invalidChecksum) {
+                        log.error("Invalid message content: " + wrapper.getRecord());
                     }
 
                     long timeStamp = wrapper.getTimestamp();
