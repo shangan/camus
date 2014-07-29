@@ -412,8 +412,8 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 						request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
 					log.error(String.format("Topic[%s] partition[%d] current offset[%d] is out of the range of valid kafka offsets[%d,%d]. Exit the program",
 							  request.getTopic(), request.getPartition(), request.getOffset(), request.getEarliestOffset(), request.getLastOffset()));
-					return null;
-					//System.exit(-1);
+//					return null;
+					System.exit(-1);
 				}
 				if(request.getEarliestOffset() > request.getOffset())
 				{
