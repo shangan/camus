@@ -243,7 +243,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 			if (Pattern.matches(regex, topicMetadata.topic())) {
 				filteredTopics.add(topicMetadata);
 			} else {
-				log.info("Discrading topic : " + topicMetadata.topic());
+				log.debug("Discarding topic : " + topicMetadata.topic());
 			}
 		}
 		return filteredTopics;
@@ -303,7 +303,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
 			for (TopicMetadata topicMetadata : topicMetadataList) {
 				if (Pattern.matches(regex, topicMetadata.topic())) {
-					log.info("Discarding topic (blacklisted): "
+					log.debug("Discarding topic (blacklisted): "
 							+ topicMetadata.topic());
 				} else if (!createMessageDecoder(context, topicMetadata.topic())) {
 					log.info("Discarding topic (Decoder generation failed) : "
@@ -384,6 +384,18 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 						new EtlKey(request.getTopic(), request.getLeaderId(),
 								request.getPartition(), 0, request
 										.getLastOffset()));
+			}
+
+			boolean isTest = context.getConfiguration().getBoolean(Configuration.ETL_TEST_SWITCH, false);
+			if(isTest) {
+				long hourOffset = (request.getLastOffset() - request.getEarliestOffset()) / (24 * 3);
+				long predictOffset = request.getLastOffset() - hourOffset;
+				offsetKeys.put(request,
+					new EtlKey(request.getTopic(), request.getLeaderId(), request.getPartition(),
+								0, predictOffset));
+				log.info(String.format("Etl test, topic[%s], partition[%d], earliest_offset[%d], " +
+					"lastest_offset[%d], predict_offset[%d]", request.getTopic(), request.getPartition(),
+					request.getEarliestOffset(), request.getLastOffset(), predictOffset));
 			}
 
 			EtlKey key = offsetKeys.get(request);

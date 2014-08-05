@@ -61,6 +61,7 @@ public class Configuration {
 	public static final String ETL_RELOAD = "etl.reload";
 	public static final String ETL_EXECUTION_DELTA_HOUR = "etl.execution.delta.hour";
 	public static final String ETL_EXECUTION_CURRENT_DATE = "etl.execution.current.date";
+	public static final String ETL_TEST_SWITCH = "etl.test.switch";
 
 	public static final long CURRENT_TIMESTAMP = System.currentTimeMillis();
 
