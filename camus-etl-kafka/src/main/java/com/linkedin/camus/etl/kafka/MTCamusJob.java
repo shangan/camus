@@ -16,12 +16,16 @@ import java.util.Properties;
 
 import com.meituan.camus.conf.Configuration;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 /**
  * Created by chenshangan on 14-5-27.
  */
 public class MTCamusJob extends CamusJob {
 
+  static {
+    PropertyConfigurator.configure("log4j.properties");
+  }
 	private Logger logger = Logger.getLogger(MTCamusJob.class);
 	private final static int ZKLOCK_EXIST = 1;
 	private final static int ZKLOCK_FAIL = 2;
