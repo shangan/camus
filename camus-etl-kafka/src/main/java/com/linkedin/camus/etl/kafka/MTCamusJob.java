@@ -24,7 +24,10 @@ import org.apache.log4j.PropertyConfigurator;
 public class MTCamusJob extends CamusJob {
 
   static {
-    PropertyConfigurator.configure("log4j.properties");
+    /*TODO:
+      log4j.properties is not correctly loaded, resolve it later
+    */
+    PropertyConfigurator.configure(MTCamusJob.class.getResourceAsStream("/log4j.properties"));
   }
 	private Logger logger = Logger.getLogger(MTCamusJob.class);
 	private final static int ZKLOCK_EXIST = 1;
