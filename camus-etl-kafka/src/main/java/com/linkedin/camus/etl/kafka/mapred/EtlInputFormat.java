@@ -414,7 +414,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 				request.setOffset(request.getEarliestOffset());
 			}
 
-			if (request.getEarliestOffset() > request.getOffset()
+			if (request.getEarliestOffset() > request.getOffset() + 1
 					|| request.getOffset() > request.getLastOffset()) {
 
 				if(context.getConfiguration().get(ETL_FAIL_INVALID_OFFSET, "False").equalsIgnoreCase("True")) {
