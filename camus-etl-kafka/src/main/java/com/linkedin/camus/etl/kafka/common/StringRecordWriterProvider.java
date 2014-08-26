@@ -98,7 +98,7 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
 			@Override
 			public void write(IEtlKey ignore, CamusWrapper data) throws IOException {
 				String record = (String) data.getRecord() + recordDelimiter;
-				writer.write(record.getBytes());
+				writer.write(record.getBytes("UTF-8"));
 			}
 
 			@Override
