@@ -4,7 +4,7 @@
   <id>dependency</id>
 
   <formats>
-    <format>jar</format>
+    <format>tar.gz</format>
   </formats>
   <includeBaseDirectory>false</includeBaseDirectory>
   <dependencySets>
@@ -13,14 +13,26 @@
       <outputDirectory>lib</outputDirectory>
       <excludes>
         <exclude>${groupId}:${artifactId}</exclude>
+        <exclude>com.linkedin.camus:camus-api</exclude>
+        <exclude>com.linkedin.camus:camus-meituan</exclude>
+        <exclude>com.linkedin.camus:camus-schema-registry</exclude>
       </excludes>
     </dependencySet>
-    <dependencySet>
-      <unpack>true</unpack>
-      <includes>
-        <include>${groupId}:${artifactId}</include>
-      </includes>
-    </dependencySet>
   </dependencySets>
-
+  <files>
+    <file>
+      <outputDirectory>/</outputDirectory>
+      <source>target/camus-etl-kafka-${project.version}-shade.jar</source>
+    </file>
+  </files>
+  <!-- outputDirectory does not work??
+  <fileSets>
+    <fileSet>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>target/camus-etl-kafka-${project.version}-shade.jar</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+  -->
 </assembly>

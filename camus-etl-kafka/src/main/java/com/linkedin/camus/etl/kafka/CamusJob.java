@@ -135,14 +135,14 @@ public class CamusJob extends Configured implements Tool {
     FileSystem fs = FileSystem.get(job.getConfiguration());
 
     String hadoopCacheJarDir = job.getConfiguration().get(
-      "hdfs.default.classpath.dir", null);
+      "hdfs.default.classpath.dir", "/var/camus/lib");
     if (hadoopCacheJarDir != null) {
       FileStatus[] status = fs.listStatus(new Path(hadoopCacheJarDir));
 
       if (status != null) {
         for (int i = 0; i < status.length; ++i) {
           if (!status[i].isDir()) {
-            log.info("Adding Jar to Distributed Cache Archive File:"
+            log.debug("Adding Jar to Distributed Cache Archive File:"
               + status[i].getPath());
 
             DistributedCache
@@ -151,7 +151,7 @@ public class CamusJob extends Configured implements Tool {
           }
         }
       } else {
-        System.out.println("hdfs.default.classpath.dir "
+        log.info("hdfs.default.classpath.dir "
           + hadoopCacheJarDir + " is empty.");
       }
     }
@@ -162,7 +162,7 @@ public class CamusJob extends Configured implements Tool {
     if (externalJarList != null) {
       String[] jarFiles = externalJarList.split(",");
       for (String jarFile : jarFiles) {
-        log.info("Adding external jar File:" + jarFile);
+        log.debug("Adding external jar File:" + jarFile);
         DistributedCache.addFileToClassPath(new Path(jarFile),
           job.getConfiguration(), fs);
       }
