@@ -27,7 +27,11 @@ public class MTCamusJob extends CamusJob {
     /*TODO:
       log4j.properties is not correctly loaded, resolve it later
     */
-    PropertyConfigurator.configure(MTCamusJob.class.getResourceAsStream("/log4j.properties"));
+    try {
+      PropertyConfigurator.configure("log4j.properties");
+    } catch (Exception ex) {
+      System.err.println("Failed to load log4j.properties. Error Info: " + ex.toString());
+    }
   }
 
   private Logger logger = Logger.getLogger(MTCamusJob.class);
