@@ -147,7 +147,7 @@ public class KafkaReader {
 		long tempTime = System.currentTimeMillis();
 		TopicAndPartition topicAndPartition = new TopicAndPartition(
 				kafkaRequest.getTopic(), kafkaRequest.getPartition());
-		log.debug("\nAsking for offset : " + (currentOffset+1));
+		log.info("Asking for offset : " + (currentOffset+1));
 		PartitionFetchInfo partitionFetchInfo = new PartitionFetchInfo(
 				currentOffset+1, fetchBufferSize);
 
@@ -203,8 +203,7 @@ public class KafkaReader {
 				}
 
 				if (!messageIter.hasNext()) {
-					System.out
-							.println("No more data left to process. Returning false");
+					log.info("No more data left to process. current offset: " + currentOffset);
 					messageIter = null;
 					return false;
 				}
@@ -212,8 +211,7 @@ public class KafkaReader {
 				return true;
 			}
 		} catch (Exception e) {
-			log.info("Exception generated during fetch");
-			e.printStackTrace();
+			log.info("Exception generated during fetch", e);
 			return false;
 		}
 
