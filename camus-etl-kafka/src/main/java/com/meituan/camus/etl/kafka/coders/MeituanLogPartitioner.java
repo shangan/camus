@@ -22,23 +22,23 @@ public class MeituanLogPartitioner implements Partitioner {
   @Override
   public String encodePartition(JobContext context, IEtlKey etlKey) {
     long outfilePartitionMs = EtlMultiOutputFormat.getEtlOutputFileTimePartitionMins(context) * 60000L;
-    return ""+DateUtils.getPartition(outfilePartitionMs, etlKey.getTime());
+    return "" + DateUtils.getPartition(outfilePartitionMs, etlKey.getTime());
   }
 
   @Override
   public String generatePartitionedPath(JobContext context, String topic, int brokerId, int partitionId, String encodedPartition) {
     // sample topic: org.nginx
-    if(outputDateFormatter == null){
+    if (outputDateFormatter == null) {
       outputDateFormatter = DateUtils.getDateTimeFormatter(
-              OUTPUT_DATE_FORMAT,
-              DateTimeZone.forID(EtlMultiOutputFormat.getDefaultTimeZone(context))
+        OUTPUT_DATE_FORMAT,
+        DateTimeZone.forID(EtlMultiOutputFormat.getDefaultTimeZone(context))
       );
     }
     String category = topic;
-    if(topic.startsWith("org_")){
+    if (topic.startsWith("org_")) {
       // '.' in topic is replaced by '_', convert it back
       String tokens[] = topic.split("_", 2);
-      if(tokens.length == 2){
+      if (tokens.length == 2) {
         category = tokens[1] + "org";
       }
     }

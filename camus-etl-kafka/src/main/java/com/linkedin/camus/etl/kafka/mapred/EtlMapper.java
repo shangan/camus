@@ -9,22 +9,21 @@ import com.linkedin.camus.etl.kafka.common.EtlKey;
 
 /**
  * KafkaETL mapper
- * 
+ * <p/>
  * input -- EtlKey, AvroWrapper
- * 
+ * <p/>
  * output -- EtlKey, AvroWrapper
- * 
  */
 public class EtlMapper extends Mapper<EtlKey, AvroWrapper<Object>, EtlKey, AvroWrapper<Object>> {
-	
-	@Override
-	public void map(EtlKey key, AvroWrapper<Object> val, Context context) throws IOException, InterruptedException {
-		long startTime = System.currentTimeMillis();
 
-		context.write(key, val);
+  @Override
+  public void map(EtlKey key, AvroWrapper<Object> val, Context context) throws IOException, InterruptedException {
+    long startTime = System.currentTimeMillis();
 
-		long endTime = System.currentTimeMillis();
-		long mapTime = ((endTime - startTime));
-		context.getCounter("total", "mapper-time(ms)").increment(mapTime);
-	}
+    context.write(key, val);
+
+    long endTime = System.currentTimeMillis();
+    long mapTime = ((endTime - startTime));
+    context.getCounter("total", "mapper-time(ms)").increment(mapTime);
+  }
 }

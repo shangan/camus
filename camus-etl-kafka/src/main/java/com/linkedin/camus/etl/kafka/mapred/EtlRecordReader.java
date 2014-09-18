@@ -327,20 +327,20 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
 
           if (reader != null) {
             mapperContext.getCounter("total", "request-time(ms)").increment(
-            reader.getFetchTime());
+              reader.getFetchTime());
           }
           return true;
         }
         log.info("Records read: " + actualMessages);
-        if(actualMessages < estimateMessages) {
-          if(currentRequest != null){
+        if (actualMessages < estimateMessages) {
+          if (currentRequest != null) {
             log.error(String.format("Message amount is less than expected. topic[%s], partition[%d], estimateMessages[%d], actualMessages[%s]",
-                    currentRequest.getTopic(), currentRequest.getPartition(), estimateMessages, actualMessages));
+              currentRequest.getTopic(), currentRequest.getPartition(), estimateMessages, actualMessages));
           }
           // fail the task if no message pulled from current partition if actually there are messages
-          if(actualMessages == 0){
+          if (actualMessages == 0) {
             String errMsg = String.format("No message is pulled from kafka. topic[%s], partition[%d], estimateMessages[%d], actualMessages[%s]",
-                                currentRequest.getTopic(), currentRequest.getPartition(), estimateMessages, actualMessages);
+              currentRequest.getTopic(), currentRequest.getPartition(), estimateMessages, actualMessages);
             log.error(errMsg);
             throw new IOException(errMsg);
           }

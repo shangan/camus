@@ -10,29 +10,29 @@ import java.net.URI;
 
 public class LeaderInfo {
 
-	private URI uri;
-	private int leaderId;
+  private URI uri;
+  private int leaderId;
 
-	public LeaderInfo(URI uri, int leaderId) {
-		this.uri = uri;
-		this.leaderId = leaderId;
-	}
+  public LeaderInfo(URI uri, int leaderId) {
+    this.uri = uri;
+    this.leaderId = leaderId;
+  }
 
-	public int getLeaderId() {
-		return leaderId;
-	}
+  public int getLeaderId() {
+    return leaderId;
+  }
 
-	public URI getUri() {
-		return uri;
-	}
+  public URI getUri() {
+    return uri;
+  }
 
-	@Override
-	public int hashCode() {
-		return this.uri.hashCode();
-	}
+  @Override
+  public int hashCode() {
+    return this.uri.hashCode();
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		return this.hashCode() == obj.hashCode();
-	}
+  @Override
+  public boolean equals(Object obj) {
+    return this.hashCode() == obj.hashCode();
+  }
 }

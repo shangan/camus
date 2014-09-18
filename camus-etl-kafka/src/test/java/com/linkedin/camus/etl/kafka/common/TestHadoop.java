@@ -20,9 +20,9 @@ import static org.mockito.Mockito.mock;
 public class TestHadoop {
 
   @Test
-  public void testPath(){
+  public void testPath() {
     Path path = new Path("parent",
-            "children/c1");
+      "children/c1");
     Assert.assertEquals("parent/children/c1", path.toString());
 
   }

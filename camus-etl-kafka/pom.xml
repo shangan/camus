@@ -163,7 +163,8 @@
             </goals>
             <configuration>
               <encoding>UTF-8</encoding>
-              <outputDirectory>${project.build.directory}</outputDirectory><!-- 把配置文件拷到和jar包同一个路径下 -->
+              <outputDirectory>${project.build.directory}</outputDirectory>
+              <!-- 把配置文件拷到和jar包同一个路径下 -->
               <resources>
                 <resource>
                   <directory>src/main/resources/</directory>
