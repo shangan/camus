@@ -213,8 +213,10 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
           key.set(request.getTopic(), request.getLeaderId(), request.getPartition(),
             request.getOffset(), request.getOffset(), 0);
           value = null;
-          log.info("\n\ntopic:" + request.getTopic() + " partition:"
-            + request.getPartition() + " beginOffset:" + request.getOffset()
+          log.info("\n\ntopic:" + request.getTopic()
+            + " partition:" + request.getPartition()
+            + " earliest offset:" + request.getEarliestOffset()
+            + " beginOffset:" + request.getOffset()
             + " estimatedLastOffset:" + request.getLastOffset());
           // message actual latest offset is smaller than request latest offset by 1
           estimateMessages = request.getLastOffset() - request.getOffset() - 1;

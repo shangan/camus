@@ -78,14 +78,24 @@ public class KafkaReader {
 		log.info("Connected to leader " + uri
 				+ " beginning reading at offset " + beginOffset
 				+ " latest offset=" + lastOffset);
-		fetch();
 	}
 
 	public boolean hasNext() throws IOException {
-		if (messageIter != null && messageIter.hasNext())
+		if (messageIter != null && messageIter.hasNext()) {
 			return true;
-		else
-			return fetch();
+    } else {
+      // if fetch failed with no exception, try to skip current offset
+      while(! fetch()) {
+        if(currentOffset + 1 < lastOffset) {
+          log.warn("encounter invalid offset[" + (currentOffset + 1) + "], skip it");
+          currentOffset += 1;
+          continue;
+        }
+        return false;
+
+      }
+      return true;
+    }
 
 	}
 
@@ -211,8 +221,8 @@ public class KafkaReader {
 				return true;
 			}
 		} catch (Exception e) {
-			log.info("Exception generated during fetch", e);
-			return false;
+			log.error("Exception generated during fetch", e);
+      throw new IOException(e.toString());
 		}
 
 	}

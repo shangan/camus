@@ -53,7 +53,7 @@ public class MeituanExecutionSelector {
 				currentTimeMillis -= DateHelper.HOUR_TIME_MILLIS * Integer.valueOf(deltaHourStr);
 			}
 		}catch (Exception ex){
-			log.error("date format error");
+			log.error("date format error", ex);
 			return null;
 		}
 		log.info("History execution target time: " + DateHelper.toTimeString(currentTimeMillis));
