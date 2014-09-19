@@ -13,10 +13,10 @@ import com.linkedin.camus.schemaregistry.AvroMemorySchemaRegistry;
  * camus.properties
  */
 public class DummySchemaRegistry extends AvroMemorySchemaRegistry {
-	public DummySchemaRegistry(Configuration conf) {
-		super();
-		super.register("DUMMY_LOG", DummyLog.newBuilder().build().getSchema());
-		super.register("DUMMY_LOG_2", DummyLog2.newBuilder().build()
-				.getSchema());
-	}
+  public DummySchemaRegistry(Configuration conf) {
+    super();
+    super.register("DUMMY_LOG", DummyLog.newBuilder().build().getSchema());
+    super.register("DUMMY_LOG_2", DummyLog2.newBuilder().build()
+      .getSchema());
+  }
 }

@@ -13,21 +13,22 @@ import java.util.Properties;
  * Created by chenshangan on 14-5-15.
  */
 public class SimpleStringMessageDecoder extends MeituanMessageDecoder {
-	private final static Logger logger = Logger.getLogger(SimpleStringMessageDecoder.class);
+  private final static Logger logger = Logger.getLogger(SimpleStringMessageDecoder.class);
 
-	public void init(Properties props, String topicName) {
-		super.init(props, topicName);
-	}
-	@Override
-	public CamusWrapper<String> decode(byte[] payload) {
+  public void init(Properties props, String topicName) {
+    super.init(props, topicName);
+  }
 
-		String payloadString = new String(payload);
-		long timestamp = beginTimeMillis;
-		if (!ignoreDeltaMillis) {
-			timestamp -= DELTA_MILLIS;
-		}
-		return new CamusWrapper<String>(payloadString, timestamp);
+  @Override
+  public CamusWrapper<String> decode(byte[] payload) {
 
-	}
+    String payloadString = new String(payload);
+    long timestamp = beginTimeMillis;
+    if (!ignoreDeltaMillis) {
+      timestamp -= DELTA_MILLIS;
+    }
+    return new CamusWrapper<String>(payloadString, timestamp);
+
+  }
 
 }

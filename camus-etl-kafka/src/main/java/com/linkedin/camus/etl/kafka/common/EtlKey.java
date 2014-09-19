@@ -17,227 +17,227 @@ import org.apache.hadoop.io.WritableComparable;
  * checksum.
  */
 public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
-    public static final Text SERVER = new Text("server");
-    public static final Text SERVICE = new Text("service");
-    public static EtlKey DUMMY_KEY = new EtlKey();
-    
-    private String leaderId = "";
-	private int partition = 0;
-	private long beginOffset = 0;
-	private long offset = 0;
-	private long checksum = 0;
-	private String topic = "";
-	private long time = 0;
-	private String server = "";
-	private String service = "";
-    private MapWritable partitionMap = new MapWritable();
+  public static final Text SERVER = new Text("server");
+  public static final Text SERVICE = new Text("service");
+  public static EtlKey DUMMY_KEY = new EtlKey();
+
+  private String leaderId = "";
+  private int partition = 0;
+  private long beginOffset = 0;
+  private long offset = 0;
+  private long checksum = 0;
+  private String topic = "";
+  private long time = 0;
+  private String server = "";
+  private String service = "";
+  private MapWritable partitionMap = new MapWritable();
 
 
-	/**
-	 * dummy empty constructor
-	 */
-	public EtlKey() {
-		this("dummy","0", 0, 0, 0, 0);
-	}
+  /**
+   * dummy empty constructor
+   */
+  public EtlKey() {
+    this("dummy", "0", 0, 0, 0, 0);
+  }
 
-	public EtlKey(EtlKey other) {
-		
-		this.partition = other.partition;
-		this.beginOffset = other.beginOffset;
-		this.offset = other.offset;
-		this.checksum = other.checksum;
-		this.topic = other.topic;
-		this.time = other.time;
-		this.server = other.server;
-		this.service = other.service;
-        this.partitionMap = new MapWritable(other.partitionMap);
-	}
+  public EtlKey(EtlKey other) {
 
-	public EtlKey(String topic, String leaderId, int partition) {
-		this.set(topic, leaderId, partition, 0, 0, 0);
-	}
+    this.partition = other.partition;
+    this.beginOffset = other.beginOffset;
+    this.offset = other.offset;
+    this.checksum = other.checksum;
+    this.topic = other.topic;
+    this.time = other.time;
+    this.server = other.server;
+    this.service = other.service;
+    this.partitionMap = new MapWritable(other.partitionMap);
+  }
 
-	public EtlKey(String topic, String leaderId, int partition, long beginOffset, long offset) {
-		this.set(topic, leaderId, partition, beginOffset, offset, 0);
-	}
+  public EtlKey(String topic, String leaderId, int partition) {
+    this.set(topic, leaderId, partition, 0, 0, 0);
+  }
 
-	public EtlKey(String topic, String leaderId,  int partition, long beginOffset, long offset, long checksum) {
-		this.set(topic, leaderId, partition, beginOffset, offset, checksum);
-	}
+  public EtlKey(String topic, String leaderId, int partition, long beginOffset, long offset) {
+    this.set(topic, leaderId, partition, beginOffset, offset, 0);
+  }
 
-	public void set(String topic, String leaderId, int partition, long beginOffset, long offset, long checksum) {
-		this.leaderId = leaderId;
-		this.partition = partition;
-		this.beginOffset = beginOffset;
-		this.offset = offset;
-		this.checksum = checksum;
-		this.topic = topic;
-		this.time = System.currentTimeMillis(); // if event can't be decoded,
-												// this time will be used for
-												// debugging.
-	}
-	
-	public void clear() {
-		leaderId = "";
-		partition = 0;
-		beginOffset = 0;
-		offset = 0;
-		checksum = 0;
-		topic = "";
-		time = 0;
-		server = "";
-		service = "";
-        partitionMap = new MapWritable();
-	}
+  public EtlKey(String topic, String leaderId, int partition, long beginOffset, long offset, long checksum) {
+    this.set(topic, leaderId, partition, beginOffset, offset, checksum);
+  }
 
-	public String getServer() {
-        return partitionMap.get(SERVER).toString();
-	}
+  public void set(String topic, String leaderId, int partition, long beginOffset, long offset, long checksum) {
+    this.leaderId = leaderId;
+    this.partition = partition;
+    this.beginOffset = beginOffset;
+    this.offset = offset;
+    this.checksum = checksum;
+    this.topic = topic;
+    this.time = System.currentTimeMillis(); // if event can't be decoded,
+    // this time will be used for
+    // debugging.
+  }
 
-	public void setServer(String newServer) {
-        partitionMap.put(SERVER, new Text(newServer));
-	}
+  public void clear() {
+    leaderId = "";
+    partition = 0;
+    beginOffset = 0;
+    offset = 0;
+    checksum = 0;
+    topic = "";
+    time = 0;
+    server = "";
+    service = "";
+    partitionMap = new MapWritable();
+  }
 
-	public String getService() {
-        return partitionMap.get(SERVICE).toString();
-	}
+  public String getServer() {
+    return partitionMap.get(SERVER).toString();
+  }
 
-	public void setService(String newService) {
-        partitionMap.put(SERVICE, new Text(newService));
-	}
+  public void setServer(String newServer) {
+    partitionMap.put(SERVER, new Text(newServer));
+  }
 
-	public long getTime() {
-		return time;
-	}
+  public String getService() {
+    return partitionMap.get(SERVICE).toString();
+  }
 
-	public void setTime(long time) {
-		this.time = time;
-	}
+  public void setService(String newService) {
+    partitionMap.put(SERVICE, new Text(newService));
+  }
 
-	public String getTopic() {
-		return topic;
-	}
+  public long getTime() {
+    return time;
+  }
 
-	public String getLeaderId() {
-		return leaderId;
-	}
+  public void setTime(long time) {
+    this.time = time;
+  }
 
-	public int getPartition() {
-		return this.partition;
-	}
+  public String getTopic() {
+    return topic;
+  }
 
-	public long getBeginOffset() {
-		return this.beginOffset;
-	}
+  public String getLeaderId() {
+    return leaderId;
+  }
 
-	public void setOffset(long offset) {
-		this.offset = offset;
-	}
-	
-	public long getOffset() {
-		return this.offset;
-	}
+  public int getPartition() {
+    return this.partition;
+  }
 
-	public long getChecksum() {
-		return this.checksum;
-	}
+  public long getBeginOffset() {
+    return this.beginOffset;
+  }
 
-    public void put(Writable key, Writable value) {
-        this.partitionMap.put(key, value);
+  public void setOffset(long offset) {
+    this.offset = offset;
+  }
+
+  public long getOffset() {
+    return this.offset;
+  }
+
+  public long getChecksum() {
+    return this.checksum;
+  }
+
+  public void put(Writable key, Writable value) {
+    this.partitionMap.put(key, value);
+  }
+
+  public void setPartition(MapWritable partitionMap) {
+    this.partitionMap = partitionMap;
+  }
+
+  public MapWritable getPartitionMap() {
+    return partitionMap;
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    this.leaderId = UTF8.readString(in);
+    this.partition = in.readInt();
+    this.beginOffset = in.readLong();
+    this.offset = in.readLong();
+    this.checksum = in.readLong();
+    this.topic = in.readUTF();
+    this.time = in.readLong();
+    this.server = in.readUTF(); // left for legacy
+    this.service = in.readUTF(); // left for legacy
+    this.partitionMap = new MapWritable();
+    try {
+      this.partitionMap.readFields(in);
+    } catch (IOException e) {
+      this.setServer(this.server);
+      this.setService(this.service);
     }
+  }
 
-    public void setPartition(MapWritable partitionMap) {
-        this.partitionMap = partitionMap;
-    }
+  @Override
+  public void write(DataOutput out) throws IOException {
+    UTF8.writeString(out, this.leaderId);
+    out.writeInt(this.partition);
+    out.writeLong(this.beginOffset);
+    out.writeLong(this.offset);
+    out.writeLong(this.checksum);
+    out.writeUTF(this.topic);
+    out.writeLong(this.time);
+    out.writeUTF(this.server); // left for legacy
+    out.writeUTF(this.service); // left for legacy
+    this.partitionMap.write(out);
+  }
 
-    public MapWritable getPartitionMap() {
-        return partitionMap;
-    }
-
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		this.leaderId = UTF8.readString(in);
-		this.partition = in.readInt();
-		this.beginOffset = in.readLong();
-		this.offset = in.readLong();
-		this.checksum = in.readLong();
-		this.topic = in.readUTF();
-		this.time = in.readLong();
-		this.server = in.readUTF(); // left for legacy
-		this.service = in.readUTF(); // left for legacy
-        this.partitionMap = new MapWritable();
-        try {
-            this.partitionMap.readFields(in);
-        } catch (IOException e) {
-            this.setServer(this.server);
-            this.setService(this.service);
+  @Override
+  public int compareTo(EtlKey o) {
+    if (partition != o.partition) {
+      return partition = o.partition;
+    } else {
+      if (beginOffset > o.beginOffset) {
+        return 1;
+      } else if (beginOffset < o.beginOffset) {
+        return -1;
+      } else {
+        if (checksum > o.checksum) {
+          return 1;
+        } else if (checksum < o.checksum) {
+          return -1;
+        } else {
+          return 0;
         }
+      }
+    }
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("topic=");
+    builder.append(topic);
+    builder.append(" partition=");
+    builder.append(partition);
+    builder.append("leaderId=");
+    builder.append(leaderId);
+    builder.append(" server=");
+    builder.append(server);
+    builder.append(" service=");
+    builder.append(service);
+    builder.append(" beginOffset=");
+    builder.append(beginOffset);
+    builder.append(" offset=");
+    builder.append(offset);
+    builder.append(" server=");
+    builder.append(server);
+    builder.append(" checksum=");
+    builder.append(checksum);
+    builder.append(" time=");
+    builder.append(time);
+
+    for (Map.Entry<Writable, Writable> e : partitionMap.entrySet()) {
+      builder.append(" " + e.getKey() + "=");
+      builder.append(e.getValue().toString());
     }
 
-	@Override
-	public void write(DataOutput out) throws IOException {
-		UTF8.writeString(out, this.leaderId);
-		out.writeInt(this.partition);
-		out.writeLong(this.beginOffset);
-		out.writeLong(this.offset);
-		out.writeLong(this.checksum);
-		out.writeUTF(this.topic);
-		out.writeLong(this.time);
-		out.writeUTF(this.server); // left for legacy
-		out.writeUTF(this.service); // left for legacy
-        this.partitionMap.write(out);
-	}
-
-	@Override
-	public int compareTo(EtlKey o) {
-		if (partition != o.partition) {
-			return partition = o.partition;
-		} else {
-			if (beginOffset > o.beginOffset) {
-				return 1;
-			} else if (beginOffset < o.beginOffset) {
-				return -1;
-			} else {
-				if (checksum > o.checksum) {
-					return 1;
-				} else if (checksum < o.checksum) {
-					return -1;
-				} else {
-					return 0;
-				}
-			}
-		}
-	}
-
-	@Override
-	public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("topic=");
-        builder.append(topic);
-        builder.append(" partition=");
-        builder.append(partition);
-        builder.append("leaderId=");
-        builder.append(leaderId);
-        builder.append(" server=");
-        builder.append(server);
-        builder.append(" service=");
-        builder.append(service);
-        builder.append(" beginOffset=");
-        builder.append(beginOffset);
-        builder.append(" offset=");
-        builder.append(offset);
-        builder.append(" server=");
-        builder.append(server);
-        builder.append(" checksum=");
-        builder.append(checksum);
-        builder.append(" time=");
-        builder.append(time);
-
-        for (Map.Entry<Writable, Writable> e: partitionMap.entrySet()) {
-            builder.append(" " + e.getKey() + "=");
-            builder.append(e.getValue().toString());
-        }
-
-        return builder.toString();
-	}
+    return builder.toString();
+  }
 }

@@ -8,9 +8,9 @@ import org.apache.avro.SchemaNormalization;
  * Avro schemas and the Avro fingerprint of the schema as it's id
  */
 public class AvroMemorySchemaRegistry extends MemorySchemaRegistry<Schema> {
-	
-	@Override
-    protected long generateSchemaId(Schema schema) {
-	    return SchemaNormalization.parsingFingerprint64(schema);
-    }
+
+  @Override
+  protected long generateSchemaId(Schema schema) {
+    return SchemaNormalization.parsingFingerprint64(schema);
+  }
 }
