@@ -297,6 +297,7 @@ public class EtlRequest implements Writable {
       }
     partition = in.readInt();
     offset = in.readLong();
+    earliestOffset = in.readLong();
     latestOffset = in.readLong();
   }
 
@@ -310,6 +311,7 @@ public class EtlRequest implements Writable {
       UTF8.writeString(out, "");
     out.writeInt(partition);
     out.writeLong(offset);
+    out.writeLong(earliestOffset);
     out.writeLong(latestOffset);
   }
 }
