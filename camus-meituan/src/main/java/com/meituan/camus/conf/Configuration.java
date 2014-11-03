@@ -62,6 +62,9 @@ public class Configuration {
   public static final String ETL_EXECUTION_DELTA_HOUR = "etl.execution.delta.hour";
   public static final String ETL_EXECUTION_CURRENT_DATE = "etl.execution.current.date";
   public static final String ETL_TEST_SWITCH = "etl.test.switch";
+  public static final String ETL_SAVE_ERRORS = "etl.save.errors";
+  public static final String ETL_SAVE_COUNTS = "etl.save.counts";
+  public static final String ETL_HISTORY_DIRECTORY_LIMIT = "etl.history.directory.limit";
 
   public static final long CURRENT_TIMESTAMP = System.currentTimeMillis();
 

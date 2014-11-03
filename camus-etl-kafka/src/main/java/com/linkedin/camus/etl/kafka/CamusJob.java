@@ -219,20 +219,21 @@ public class CamusJob extends Configured implements Tool {
     long limit = (long) (content.getQuota() * job.getConfiguration()
       .getFloat(ETL_EXECUTION_HISTORY_MAX_OF_QUOTA, (float) .5));
     limit = limit == 0 ? 50000 : limit;
-
-    long currentCount = content.getFileCount()
-      + content.getDirectoryCount();
+    limit = job.getConfiguration().getLong("etl.history.directory.limit", 300);
 
     FileStatus[] executions = fs.listStatus(execHistory);
+    long currentCount = executions.length;
 
     // removes oldest directory until we get under required % of count
     // quota. Won't delete the most recent directory.
     for (int i = 0; i < executions.length - 1 && limit < currentCount; i++) {
       FileStatus stat = executions[i];
       log.info("removing old execution: " + stat.getPath().getName());
-      ContentSummary execContent = fs.getContentSummary(stat.getPath());
+     /* ContentSummary execContent = fs.getContentSummary(stat.getPath());
       currentCount -= execContent.getFileCount()
         - execContent.getDirectoryCount();
+      */
+      currentCount--;
       fs.delete(stat.getPath(), true);
     }
 
