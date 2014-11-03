@@ -245,7 +245,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     public MultiEtlRecordWriter(TaskAttemptContext context) throws IOException,
       InterruptedException {
       this.context = context;
-      if (context.getConfiguration().getBoolean("etl.save.errors", true)){
+      if (context.getConfiguration().getBoolean(com.meituan.camus.conf.Configuration.ETL_SAVE_ERRORS, true)){
         errorWriter = SequenceFile.createWriter(FileSystem.get(context.getConfiguration()),
           context.getConfiguration(),
           new Path(committer.getWorkPath(), getUniqueFile(context, ERRORS_PREFIX, "")),
@@ -382,7 +382,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
           }
         }
 
-        if (context.getConfiguration().getBoolean("etl.save.counts", true)
+        if (context.getConfiguration().getBoolean(com.meituan.camus.conf.Configuration.ETL_SAVE_COUNTS, true)
           || context.getConfiguration().get("mapred.task.id").endsWith("000000_0")) {
           Path tempPath = new Path(workPath, "counts." + context.getConfiguration().get("mapred.task.id"));
           OutputStream outputStream = new BufferedOutputStream(fs.create(tempPath));

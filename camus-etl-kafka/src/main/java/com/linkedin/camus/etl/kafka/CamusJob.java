@@ -219,7 +219,7 @@ public class CamusJob extends Configured implements Tool {
     long limit = (long) (content.getQuota() * job.getConfiguration()
       .getFloat(ETL_EXECUTION_HISTORY_MAX_OF_QUOTA, (float) .5));
     limit = limit == 0 ? 50000 : limit;
-    limit = job.getConfiguration().getLong("etl.history.directory.limit", 300);
+    limit = job.getConfiguration().getLong(com.meituan.camus.conf.Configuration.ETL_HISTORY_DIRECTORY_LIMIT, 300);
 
     FileStatus[] executions = fs.listStatus(execHistory);
     long currentCount = executions.length;
