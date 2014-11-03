@@ -245,10 +245,12 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     public MultiEtlRecordWriter(TaskAttemptContext context) throws IOException,
       InterruptedException {
       this.context = context;
-      errorWriter = SequenceFile.createWriter(FileSystem.get(context.getConfiguration()),
-        context.getConfiguration(),
-        new Path(committer.getWorkPath(), getUniqueFile(context, ERRORS_PREFIX, "")),
-        EtlKey.class, ExceptionWritable.class);
+      if (context.getConfiguration().getBoolean(com.meituan.camus.conf.Configuration.ETL_SAVE_ERRORS, true)){
+        errorWriter = SequenceFile.createWriter(FileSystem.get(context.getConfiguration()),
+          context.getConfiguration(),
+          new Path(committer.getWorkPath(), getUniqueFile(context, ERRORS_PREFIX, "")),
+          EtlKey.class, ExceptionWritable.class);
+      }
 
       if (EtlInputFormat.getKafkaMaxHistoricalDays(context) != -1) {
         int maxDays = EtlInputFormat.getKafkaMaxHistoricalDays(context);
@@ -263,7 +265,9 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
       for (String w : dataWriters.keySet()) {
         dataWriters.get(w).close(context);
       }
-      errorWriter.close();
+      if (errorWriter != null) {
+        errorWriter.close();
+      }
     }
 
     @Override
@@ -297,7 +301,9 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
         committer.addOffset(key);
         System.err.println(key.toString());
         System.err.println(val.toString());
-        errorWriter.append(key, (ExceptionWritable) val);
+        if (errorWriter != null) {
+          errorWriter.append(key, (ExceptionWritable) val);
+        }
       }
     }
   }
@@ -376,13 +382,16 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
           }
         }
 
-        Path tempPath = new Path(workPath, "counts." + context.getConfiguration().get("mapred.task.id"));
-        OutputStream outputStream = new BufferedOutputStream(fs.create(tempPath));
-        ObjectMapper mapper = new ObjectMapper();
-        log.info("Writing counts to : " + tempPath.toString());
-        long time = System.currentTimeMillis();
-        mapper.writeValue(outputStream, allCountObject);
-        log.debug("Time taken : " + (System.currentTimeMillis() - time) / 1000);
+        if (context.getConfiguration().getBoolean(com.meituan.camus.conf.Configuration.ETL_SAVE_COUNTS, true)
+          || context.getConfiguration().get("mapred.task.id").endsWith("000000_0")) {
+          Path tempPath = new Path(workPath, "counts." + context.getConfiguration().get("mapred.task.id"));
+          OutputStream outputStream = new BufferedOutputStream(fs.create(tempPath));
+          ObjectMapper mapper = new ObjectMapper();
+          log.info("Writing counts to : " + tempPath.toString());
+          long time = System.currentTimeMillis();
+          mapper.writeValue(outputStream, allCountObject);
+          log.debug("Time taken : " + (System.currentTimeMillis() - time) / 1000);
+        }
       }
 
       SequenceFile.Writer offsetWriter = SequenceFile.createWriter(fs,
