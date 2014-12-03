@@ -175,10 +175,11 @@ public class KafkaReader {
       fetchResponse = simpleConsumer.fetch(fetchRequest);
       if (fetchResponse.hasError()) {
         log.info("Error encountered during a fetch request from Kafka");
-        log.info("Error Code generated : "
+        String errMsg = "Error Code generated : "
           + fetchResponse.errorCode(kafkaRequest.getTopic(),
-          kafkaRequest.getPartition()));
-        return false;
+          kafkaRequest.getPartition());
+        log.info(errMsg);
+        throw new IOException(errMsg);
       } else {
         ByteBufferMessageSet messageBuffer = fetchResponse.messageSet(
           kafkaRequest.getTopic(), kafkaRequest.getPartition());
