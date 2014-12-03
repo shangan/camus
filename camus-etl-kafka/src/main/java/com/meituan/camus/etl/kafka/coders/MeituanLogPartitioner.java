@@ -19,6 +19,7 @@ public class MeituanLogPartitioner implements Partitioner {
   protected static final String OUTPUT_DATE_FORMAT = "YYYYMMdd/HH";
   protected DateTimeFormatter outputDateFormatter = null;
 
+
   @Override
   public String encodePartition(JobContext context, IEtlKey etlKey) {
     long outfilePartitionMs = EtlMultiOutputFormat.getEtlOutputFileTimePartitionMins(context) * 60000L;
