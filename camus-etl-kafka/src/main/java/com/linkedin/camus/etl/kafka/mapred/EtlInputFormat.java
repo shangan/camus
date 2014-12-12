@@ -124,7 +124,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
    * @param offsetRequestInfo
    * @return
    */
-  public ArrayList<EtlRequest> fetchLatestOffsetAndCreateEtlRequests(
+  public ArrayList<EtlRequest> fetchLatestOffsetAndCreateEtlRequests (
     JobContext context,
     HashMap<LeaderInfo, ArrayList<TopicAndPartition>> offsetRequestInfo) {
     ArrayList<EtlRequest> finalRequests = new ArrayList<EtlRequest>();
@@ -270,7 +270,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     CamusJob.startTiming("getSplits");
     ZabbixSender zabbixSender = createZabbixSender(context);
 
-    ArrayList<EtlRequest> finalRequests;
+    ArrayList<EtlRequest> finalRequests = null;
     HashMap<LeaderInfo, ArrayList<TopicAndPartition>> offsetRequestInfo = new HashMap<LeaderInfo, ArrayList<TopicAndPartition>>();
     try {
 
@@ -356,8 +356,21 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
       return null;
     }
     // Get the latest offsets and generate the EtlRequests
-    finalRequests = fetchLatestOffsetAndCreateEtlRequests(context,
-      offsetRequestInfo);
+    try {
+      finalRequests = fetchLatestOffsetAndCreateEtlRequests(context,
+        offsetRequestInfo);
+    } catch (Exception e) {
+      log.error(e.getStackTrace());
+      System.exit(-1);
+    }
+
+
+    if (finalRequests == null || finalRequests.size() == 0) {
+      log.error("No EtlRequest!");
+      return null;
+    } else {
+      log.info("It has " + finalRequests.size() + " EtlRequests.");
+    }
 
     Collections.sort(finalRequests, new Comparator<EtlRequest>() {
       public int compare(EtlRequest r1, EtlRequest r2) {

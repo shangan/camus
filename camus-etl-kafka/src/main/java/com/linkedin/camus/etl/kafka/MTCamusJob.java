@@ -34,7 +34,7 @@ public class MTCamusJob extends CamusJob {
     }
   }
 
-  private Logger logger = Logger.getLogger(MTCamusJob.class);
+  private static Logger logger = Logger.getLogger(MTCamusJob.class);
   private final static int ZKLOCK_EXIST = 1;
   private final static int ZKLOCK_FAIL = 2;
   private final static int ZKLOCK_SUCCESS = 3;
@@ -190,6 +190,8 @@ public class MTCamusJob extends CamusJob {
           job.start(allArgs);
         } catch (Exception e) {
           e.printStackTrace(System.err);
+          logger.error(e.getStackTrace());
+          System.exit(-1);
         }
         return null;
       }
