@@ -324,7 +324,7 @@ public class CamusJob extends Configured implements Tool {
         .getTaskAttemptId().getJobID())) {
         if (task.getCurrentStatus().equals(TIPStatus.FAILED)) {
           for (String s : task.getDiagnostics()) {
-            System.err.println("task error: " + s);
+            System.out.println("task error: " + s);
           }
         }
       }
