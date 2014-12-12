@@ -124,7 +124,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
    * @param offsetRequestInfo
    * @return
    */
-  public ArrayList<EtlRequest> fetchLatestOffsetAndCreateEtlRequests(
+  public ArrayList<EtlRequest> fetchLatestOffsetAndCreateEtlRequests (
     JobContext context,
     HashMap<LeaderInfo, ArrayList<TopicAndPartition>> offsetRequestInfo) {
     ArrayList<EtlRequest> finalRequests = new ArrayList<EtlRequest>();
@@ -358,6 +358,13 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     // Get the latest offsets and generate the EtlRequests
     finalRequests = fetchLatestOffsetAndCreateEtlRequests(context,
       offsetRequestInfo);
+
+    if (finalRequests == null && finalRequests.size() == 0) {
+      log.error("No EtlRequest!");
+      return null;
+    } else {
+      log.info("It has " + finalRequests.size() + " EtlRequests.");
+    }
 
     Collections.sort(finalRequests, new Comparator<EtlRequest>() {
       public int compare(EtlRequest r1, EtlRequest r2) {
