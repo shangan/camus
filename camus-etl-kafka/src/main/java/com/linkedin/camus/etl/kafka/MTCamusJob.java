@@ -190,7 +190,7 @@ public class MTCamusJob extends CamusJob {
           job.start(allArgs);
         } catch (Exception e) {
           logger.error("MTCamusJob failed", e);
-          System.exit(-1);
+          //System.exit(-1);
         }
         return null;
       }
