@@ -189,8 +189,7 @@ public class MTCamusJob extends CamusJob {
           job = new MTCamusJob(allArgs);
           job.start(allArgs);
         } catch (Exception e) {
-          e.printStackTrace(System.err);
-          logger.error(e.getStackTrace());
+          logger.error("MTCamusJob failed", e);
           System.exit(-1);
         }
         return null;

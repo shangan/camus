@@ -364,7 +364,6 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
       System.exit(-1);
     }
 
-
     if (finalRequests == null || finalRequests.size() == 0) {
       log.error("No EtlRequest!");
       return null;
