@@ -360,7 +360,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
       finalRequests = fetchLatestOffsetAndCreateEtlRequests(context,
         offsetRequestInfo);
     } catch (Exception e) {
-      log.error(e.getStackTrace());
+      log.error("Failed to get partition offset: " + e);
       System.exit(-1);
     }
 
