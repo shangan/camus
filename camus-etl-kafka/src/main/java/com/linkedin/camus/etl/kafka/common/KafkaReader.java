@@ -187,6 +187,7 @@ public class KafkaReader {
         log.debug("Time taken to fetch : "
           + (lastFetchTime / 1000) + " seconds");
         log.debug("The size of the ByteBufferMessageSet returned is : " + messageBuffer.sizeInBytes());
+        log.info("Time taken to fetch : "  + (lastFetchTime / 1000) + " seconds");
         int skipped = 0;
         totalFetchTime += lastFetchTime;
         messageIter = messageBuffer.iterator();
