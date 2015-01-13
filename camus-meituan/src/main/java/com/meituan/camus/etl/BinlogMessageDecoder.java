@@ -88,18 +88,19 @@ public class BinlogMessageDecoder extends MeituanMessageDecoder {
         if (count > 0) {
           sb.append(COLUMNS_SEPARATOR);
         }
-        //		BinlogColumn bColumn = row.getBeforeColumn(columnName);
+        BinlogColumn bColumn = row.getBeforeColumn(columnName);
         BinlogColumn aColumn = row.getAfterColumn(columnName);
-        /*
-        if (bColumn != null) {
-					sb.append(columnName).append(COLUMN_NAME_VALUE_SEPARATOR).append(
+        if (eventType == "DELETE") {
+            if (bColumn != null) {
+                sb.append(columnName).append(COLUMN_NAME_VALUE_SEPARATOR).append(
 							bColumn.toString(COLUMN_VALUE_INTERNAL_SEPARATOR));				
-				}
-				*/
+			}
+        }else{
         //sb.append(COLUMNS_BEFORE_AFTER_SEPARATOR);
-        if (aColumn != null) {
-          sb.append(columnName).append(COLUMN_NAME_VALUE_SEPARATOR).append(
-            aColumn.toString(COLUMN_VALUE_INTERNAL_SEPARATOR));
+            if (aColumn != null) {
+                sb.append(columnName).append(COLUMN_NAME_VALUE_SEPARATOR).append(
+                            aColumn.toString(COLUMN_VALUE_INTERNAL_SEPARATOR));
+            }
         }
         count++;
       }
