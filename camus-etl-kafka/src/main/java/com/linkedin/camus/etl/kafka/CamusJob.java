@@ -39,11 +39,13 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import com.meituan.camus.utils.DateHelper;
 
 public class CamusJob extends Configured implements Tool {
 
+  public static final String ETL_DESTINATION_PATH = "etl.destination.path";
   public static final String CAMUS_JOB_NAME = "camus.job.name";
   public static final String ETL_EXECUTION_BASE_PATH = "etl.execution.base.path";
   public static final String ETL_EXECUTION_HISTORY_PATH = "etl.execution.history.path";
@@ -307,14 +309,15 @@ public class CamusJob extends Configured implements Tool {
     // Print any potentail errors encountered
     printErrors(fs, newExecutionOutput);
 
-    fs.rename(newExecutionOutput, execHistory);
-
     log.info("Job finished");
     stopTiming("commit");
     stopTiming("total");
-    createReport(job, timingMap);
 
-    if (!job.isSuccessful()) {
+    if (job.isSuccessful()) {
+      removeData(fs, newExecutionOutput, getDestinationPath(job));
+      fs.rename(newExecutionOutput, execHistory);
+      createReport(job, timingMap);
+    } else {
       JobClient client = new JobClient(
         new JobConf(job.getConfiguration()));
 
@@ -329,6 +332,23 @@ public class CamusJob extends Configured implements Tool {
         }
       }
       throw new RuntimeException("hadoop job failed");
+    }
+  }
+
+  public void removeData(FileSystem fs,  Path newExecutionOutput, Path destinationOutput)
+          throws IOException{
+    for (FileStatus partitionFile : fs.listStatus(newExecutionOutput,new DataPathFilter())) {
+      String partition = partitionFile.getPath().getName();
+      partition = partition.replace('+', '/');
+      for (FileStatus dataFile : fs.listStatus(partitionFile.getPath())) {
+        Path destDataFile = new Path(destinationOutput, partition + "/" + dataFile.getPath().getName());
+        if (!fs.exists(destDataFile.getParent())) {
+          fs.mkdirs(destDataFile.getParent());
+        }
+        fs.rename(dataFile.getPath(), destDataFile);
+      }
+
+      fs.delete(partitionFile.getPath(), false);
     }
   }
 
@@ -630,8 +650,7 @@ public class CamusJob extends Configured implements Tool {
   }
 
   public static int getKafkaFetchRequestMinBytes(JobContext context) {
-    return context.getConfiguration().getInt(KAFKA_FETCH_REQUEST_MIN_BYTES,
-      1024);
+    return context.getConfiguration().getInt(KAFKA_FETCH_REQUEST_MIN_BYTES, 1024);
   }
 
   public static int getKafkaFetchRequestMaxWait(JobContext job) {
@@ -678,4 +697,16 @@ public class CamusJob extends Configured implements Tool {
   public static boolean getLog4jConfigure(JobContext job) {
     return job.getConfiguration().getBoolean(LOG4J_CONFIGURATION, false);
   }
+
+  public class DataPathFilter implements PathFilter {
+    @Override
+    public boolean accept(Path path) {
+      return Pattern.matches("([^\\+]+)org\\+dt=(\\d+)\\+hour=(\\d+)", path.getName());
+    }
+  }
+
+  public static Path getDestinationPath(JobContext job) {
+    return new Path(job.getConfiguration().get(ETL_DESTINATION_PATH));
+  }
+
 }

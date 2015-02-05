@@ -45,11 +45,11 @@ public class MeituanLogPartitioner implements Partitioner {
     }
 
     StringBuilder sb = new StringBuilder();
-    sb.append(category).append("/");
+    sb.append(category).append("+");
 
     String bucket = outputDateFormatter.print(Long.valueOf(encodedPartition));
     String tokens[] = bucket.split("/");
-    sb.append("dt=").append(tokens[0]).append("/hour=").append(tokens[1]);
+    sb.append("dt=").append(tokens[0]).append("+hour=").append(tokens[1]);
     System.out.println(sb.toString());
 
     return sb.toString();
