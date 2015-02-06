@@ -351,7 +351,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
       FileSystem fs = FileSystem.get(context.getConfiguration());
       if (isRunMoveData(context)) {
         Path workPath = super.getWorkPath();
-//      Path baseOutDir = getDestinationPath(context);
+        Path baseOutDir = getDestinationPath(context);
         for (FileStatus f : fs.listStatus(workPath)) {
           String file = f.getPath().getName();
           if (file.startsWith("data")) {
@@ -361,7 +361,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
             String partitionedFile = getPartitionedPath(context, file,
               count.getEventCount(), count.getLastKey().getOffset());
 
-            Path dest = new Path(workPath, partitionedFile);
+            Path dest = new Path(baseOutDir, partitionedFile);
 
             if (!fs.exists(dest.getParent())) {
               fs.mkdirs(dest.getParent());
@@ -377,7 +377,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
 
             if (isRunTrackingPost(context)) {
               count.writeCountsToHDFS(allCountObject, fs, new Path(workPath, COUNTS_PREFIX + "."
-                + f.getPath().getName().replace(fileNameExtension, "")));
+                + dest.getName().replace(fileNameExtension, "")));
             }
           }
         }
