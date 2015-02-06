@@ -701,7 +701,7 @@ public class CamusJob extends Configured implements Tool {
   public class DataPathFilter implements PathFilter {
     @Override
     public boolean accept(Path path) {
-      return Pattern.matches("([^\\+]+)org\\+dt=(\\d+)\\+hour=(\\d+)", path.getName());
+      return Pattern.matches("([^+]+)\\+dt=(\\d+)\\+hour=(\\d+)", path.getName());
     }
   }
 
