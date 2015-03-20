@@ -449,17 +449,22 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         request.setOffset(request.getEarliestOffset());
 
       }
-      // only save existed partition info as partition can be increased or reduced and
-      // should use previous offset not the latest offset
+      /**
+       *  only save exist partition info as partition can be increased or reduced during kafka cluster crash
+       *  in such case, history partition offset info is invalid
+       *  if ETL_FAIL_INVALID_OFFSET is set false, should overwrite history offset
+        */
+
       existOffsetKeys.put(
         request,
         new EtlKey(request.getTopic(), request.getLeaderId(),
-          request.getPartition(), 0, request
-          .getOffset()));
+          request.getPartition(), 0, request.getOffset()));
       log.info(request);
     }
-    if (existOffsetKeys.size() > 0) {
+    if (existOffsetKeys.size() > 0
+      && context.getConfiguration().get(ETL_FAIL_INVALID_OFFSET, "False").equalsIgnoreCase("False")) {
       // sometime existOffset might not exist as topicMeta initialization failure
+      log.info("Manually process invalid offset, overwrite all partition offset info");
       writePrevious(existOffsetKeys.values(), context);
     } else {
       // each history has an new entry act as previous history for next run
