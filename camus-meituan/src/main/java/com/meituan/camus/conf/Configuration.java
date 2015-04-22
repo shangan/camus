@@ -66,6 +66,9 @@ public class Configuration {
   public static final String ETL_SAVE_COUNTS = "etl.save.counts";
   public static final String ETL_HISTORY_DIRECTORY_LIMIT = "etl.history.directory.limit";
 
+  public static final String ETL_STARTTIME_ON = "etl.starttime.on";
+  public static final String ETL_STARTTIME = "etl.starttime";
+
   public static final long CURRENT_TIMESTAMP = System.currentTimeMillis();
 
 
