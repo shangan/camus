@@ -69,6 +69,7 @@ public class CamusJob extends Configured implements Tool {
   public static final String KAFKA_HOST_PORT = "kafka.host.port";
   public static final String KAFKA_TIMEOUT_VALUE = "kafka.timeout.value";
   public static final String LOG4J_CONFIGURATION = "log4j.configuration";
+  public static final String ETL_STARTTIME_ON = "etl.starttime.on";
   private static org.apache.log4j.Logger log = Logger
     .getLogger(CamusJob.class);
 
@@ -277,8 +278,11 @@ public class CamusJob extends Configured implements Tool {
       + newExecutionOutput.toString());
     Date newExecutionDate = sdf.parse(newExecutionOutput.getName());
 
-    if (DateHelper.isSameHour(historyExecutionDate.getTime(), newExecutionDate.getTime())) {
-      job.getConfiguration().set(com.meituan.camus.conf.Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "0");
+    if (!job.getConfiguration().getBoolean(ETL_STARTTIME_ON, false)) {
+      log.info("etl.starttime.on = false");
+      if (DateHelper.isSameHour(historyExecutionDate.getTime(), newExecutionDate.getTime())) {
+        job.getConfiguration().set(com.meituan.camus.conf.Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "0");
+      }
     }
 
     job.setInputFormatClass(EtlInputFormat.class);
