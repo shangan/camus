@@ -75,6 +75,9 @@ public class Configuration {
   public static final String ZABBIX_ITEM_COMMON_KEY = "camus.etl.failinfo";
   public static final String CAMUS_JOB_NAME_VARIABLE = "{" + CAMUS_JOB_NAME + "}";
 
+  public static final String CAMUS_FETCH_OFFSET_RATIO_PER_REQUEST = "camus_fetch_offset_ratio_per_request";
+
+
   public static String getEtlExecutionBasePath(String basePath, String jobName) {
     return basePath.replace(CAMUS_JOB_NAME_VARIABLE, jobName.trim());
   }
