@@ -481,7 +481,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     log.info("the camus fetch the offset ratio per request " +  fetchOffsetRatioPerRequest);
     if (fetchOffsetRatioPerRequest > 0 && fetchOffsetRatioPerRequest < 100) {
       for (EtlRequest request : finalRequests) {
-        long latestOffset = request.getOffset() + (request.getLastOffset() - request.getOffset()) / 100 * 50;
+        long latestOffset = request.getOffset() + (request.getLastOffset() - request.getOffset()) / 100 * fetchOffsetRatioPerRequest;
         request.setLatestOffset(latestOffset);
       }
     }
