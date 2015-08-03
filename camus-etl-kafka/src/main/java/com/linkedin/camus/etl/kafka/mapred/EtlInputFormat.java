@@ -489,8 +489,6 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     CamusJob.stopTiming("getSplits");
     CamusJob.startTiming("hadoop");
     CamusJob.setTime("hadoop_start");
-
-
     return allocateWork(finalRequests, context);
   }
 
