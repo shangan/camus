@@ -472,11 +472,6 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
       writePrevious(offsetKeys.values(), context);
     }
 
-    log.info("EtlRequests:");
-    for (EtlRequest request : finalRequests) {
-      log.info(request);
-    }
-
     long fetchOffsetRatioPerRequest = context.getConfiguration().getLong(Configuration.CAMUS_FETCH_OFFSET_RATIO_PER_REQUEST, 0);
     log.info("the camus fetch the offset ratio per request " +  fetchOffsetRatioPerRequest);
     if (fetchOffsetRatioPerRequest > 0 && fetchOffsetRatioPerRequest < 100) {
@@ -484,11 +479,11 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         long latestOffset = request.getOffset() + (request.getLastOffset() - request.getOffset()) / 100 * fetchOffsetRatioPerRequest;
         request.setLatestOffset(latestOffset);
       }
-    }
 
-    log.info("EtlRequests");
-    for (EtlRequest request : finalRequests) {
-      log.info(request);
+      log.info("EtlRequests after modifying the latest offset");
+      for (EtlRequest request : finalRequests) {
+        log.info(request);
+      }
     }
 
     CamusJob.stopTiming("getSplits");
