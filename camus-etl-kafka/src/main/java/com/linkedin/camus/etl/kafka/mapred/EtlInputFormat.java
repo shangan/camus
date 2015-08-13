@@ -124,7 +124,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
    * @param offsetRequestInfo
    * @return
    */
-  public ArrayList<EtlRequest> fetchLatestOffsetAndCreateEtlRequests (
+  public ArrayList<EtlRequest> fetchLatestOffsetAndCreateEtlRequests(
     JobContext context,
     HashMap<LeaderInfo, ArrayList<TopicAndPartition>> offsetRequestInfo) {
     ArrayList<EtlRequest> finalRequests = new ArrayList<EtlRequest>();
@@ -453,7 +453,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
        *  only save exist partition info as partition can be increased or reduced during kafka cluster crash
        *  in such case, history partition offset info is invalid
        *  if ETL_FAIL_INVALID_OFFSET is set false, should overwrite history offset
-        */
+       */
 
       existOffsetKeys.put(
         request,
@@ -473,7 +473,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     }
 
     long fetchOffsetRatioPerRequest = context.getConfiguration().getLong(Configuration.CAMUS_FETCH_OFFSET_RATIO_PER_REQUEST, 0);
-    log.info("the camus fetch the offset ratio per request " +  fetchOffsetRatioPerRequest);
+    log.info("the camus fetch the offset ratio per request " + fetchOffsetRatioPerRequest);
     if (fetchOffsetRatioPerRequest > 0 && fetchOffsetRatioPerRequest < 100) {
       for (EtlRequest request : finalRequests) {
         long latestOffset = request.getOffset() + (request.getLastOffset() - request.getOffset()) / 100 * fetchOffsetRatioPerRequest;
@@ -486,10 +486,78 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
       }
     }
 
+    String splitSwitch = context.getConfiguration().get(
+      Configuration.ETL_SPLIT_TASK_SWITCH, "off"
+    );
+    if (splitSwitch.equals("on")) {
+      int numTasks = context.getConfiguration()
+        .getInt("mapred.map.tasks", 30);
+      if (numTasks <= 0) {
+        log.info("mapred.map.tasks <= 0, use default value 30!");
+        numTasks = 30;
+      }
+      ArrayList<EtlRequest> extraRequests = new ArrayList<EtlRequest>();
+      long totalCount = 0;
+      for (EtlRequest request : finalRequests) {
+        totalCount += request.getLastOffset() - request.getOffset();
+      }
+      long averCount = totalCount / numTasks;
+      if (averCount == 0) {
+        log.info("averCount is 0, did not split requests");
+      } else {
+        log.info("averCount is " + averCount);
+        for (EtlRequest request : finalRequests) {
+          if (request.getLastOffset() - request.getOffset() >= averCount * 2) {
+            long beginOffset = request.getOffset();
+            long endOffset = request.getLastOffset();
+            boolean first = true;
+            while (beginOffset < endOffset) {
+              if (!first) {
+                EtlRequest etlRequest = new EtlRequest(context,
+                  request.getTopic(),
+                  request.getLeaderId(),
+                  request.getPartition(),
+                  request.getURI());
+                etlRequest.setEarliestOffset(request.getEarliestOffset());
+                etlRequest.setOffset(beginOffset);
+                etlRequest.setLatestOffset(Math.min(beginOffset + averCount, endOffset));
+                extraRequests.add(etlRequest);
+              } else {
+                first = false;
+                request.setOffset(beginOffset);
+                request.setLatestOffset(Math.min(beginOffset + averCount, endOffset));
+              }
+              beginOffset += averCount;
+            }
+          }
+        }
+      }
+
+      for (EtlRequest request : extraRequests) {
+        finalRequests.add(request);
+      }
+
+      Collections.sort(finalRequests, new Comparator<EtlRequest>() {
+        public int compare(EtlRequest r1, EtlRequest r2) {
+          return r1.getTopic().compareTo(r2.getTopic());
+        }
+      });
+    }
+
+    for (EtlRequest request : finalRequests) {
+      log.info("request topic[" + request.getTopic() + "]"
+        + "partition[" + request.getPartition() + "]," +
+        " earliest[" + request.getEarliestOffset() + "]," +
+        " start[" + request.getOffset() + "], end[" + request.getLastOffset() + "]");
+    }
+
+
     CamusJob.stopTiming("getSplits");
     CamusJob.startTiming("hadoop");
     CamusJob.setTime("hadoop_start");
-    return allocateWork(finalRequests, context);
+    return
+
+      allocateWork(finalRequests, context);
   }
 
   private Set<String> getMoveToLatestTopicsSet(JobContext context) {
