@@ -265,6 +265,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
   }
 
   public ArrayList<EtlRequest> doSplitEtl(JobContext context, ArrayList<EtlRequest> finalRequests) {
+    ArrayList<EtlRequest> retRequests = new ArrayList<EtlRequest>();
     int numTasks = context.getConfiguration()
       .getInt("mapred.map.tasks", 30);
     if (numTasks <= 0) {
@@ -285,41 +286,25 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         if (request.getLastOffset() - request.getOffset() >= averCount * 2) {
           long beginOffset = request.getOffset();
           long endOffset = request.getLastOffset();
-          boolean first = true;
           while (beginOffset < endOffset) {
-            if (!first) {
-              EtlRequest etlRequest = new EtlRequest(context,
-                request.getTopic(),
-                request.getLeaderId(),
-                request.getPartition(),
-                request.getURI());
-              etlRequest.setEarliestOffset(request.getEarliestOffset());
-              etlRequest.setOffset(beginOffset);
-              etlRequest.setLatestOffset(Math.min(beginOffset + averCount, endOffset));
-              extraRequests.add(etlRequest);
-            } else {
-              first = false;
-              request.setOffset(beginOffset);
-              request.setLatestOffset(Math.min(beginOffset + averCount, endOffset));
-            }
+            EtlRequest etlRequest = new EtlRequest(context,
+              request.getTopic(),
+              request.getLeaderId(),
+              request.getPartition(),
+              request.getURI());
+            etlRequest.setEarliestOffset(request.getEarliestOffset());
+            etlRequest.setOffset(beginOffset);
+            etlRequest.setLatestOffset(Math.min(beginOffset + averCount, endOffset));
+            retRequests.add(etlRequest);
             beginOffset += averCount;
           }
+        } else {
+          retRequests.add(request);
         }
       }
     }
 
-    for (EtlRequest request : extraRequests) {
-      finalRequests.add(request);
-    }
-
-    for (EtlRequest request : finalRequests) {
-      log.info("request topic[" + request.getTopic() + "]"
-        + "partition[" + request.getPartition() + "]," +
-        " earliest[" + request.getEarliestOffset() + "]," +
-        " start[" + request.getOffset() + "], end[" + request.getLastOffset() + "]");
-    }
-
-    return finalRequests;
+    return retRequests;
   }
 
   @Override
@@ -549,6 +534,13 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     );
     if (splitSwitch.equalsIgnoreCase("on")) {
       finalRequests = doSplitEtl(context, finalRequests);
+      for (EtlRequest request : finalRequests) {
+        log.info("request topic[" + request.getTopic() + "]"
+          + "partition[" + request.getPartition() + "]," +
+          " earliest[" + request.getEarliestOffset() + "]," +
+          " start[" + request.getOffset() + "], end[" + request.getLastOffset() + "]");
+      }
+
     }
 
     CamusJob.stopTiming("getSplits");
