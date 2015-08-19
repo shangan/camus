@@ -77,6 +77,7 @@ public class Configuration {
 
   public static final String CAMUS_FETCH_OFFSET_RATIO_PER_REQUEST = "camus_fetch_offset_ratio_per_request";
 
+  public static final String ETL_SPLIT_TASK_SWITCH = "etl.split.task";
 
   public static String getEtlExecutionBasePath(String basePath, String jobName) {
     return basePath.replace(CAMUS_JOB_NAME_VARIABLE, jobName.trim());

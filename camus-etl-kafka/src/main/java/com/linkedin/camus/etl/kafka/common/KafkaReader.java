@@ -81,6 +81,9 @@ public class KafkaReader {
   }
 
   public boolean hasNext() throws IOException {
+    if (currentOffset >= lastOffset) {
+      return false;
+    }
     if (messageIter != null && messageIter.hasNext()) {
       return true;
     } else {
