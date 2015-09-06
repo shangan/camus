@@ -416,6 +416,7 @@ public class CamusJob extends Configured implements Tool {
     @Override
     public Boolean call() throws Exception {
       try {
+        fs.deleteOnExit(destDataPath);
         fs.rename(srcDataPath, destDataPath);
       } catch (IOException ie) {
         log.error("failed rename " + srcDataPath + " to " + destDataPath, ie);
@@ -425,6 +426,16 @@ public class CamusJob extends Configured implements Tool {
     }
   }
 
+  /**
+   * 功能：采用串行的方式将“执行目录”下的数据文件移动到“目标目录”下。
+   * newExecutionOutput /var/camus/offsets/horiginallog.test/2015-09-01-13-44-02
+   * destinationOutput /user/hive/warehouse/originallog.db/
+   *
+   * 例如：/var/camus/offsets/horiginallog.test/2015-09-01-13-44-02/
+   * testorg+dt=20150901+hour=13+testorg.57.0.32240.32809281.lzo
+   * 移动到：/user/hive/warehouse/originallog.db/
+   * testorg/dt=20150831/hour=14/testorg.57.0.19883.32777041.lzo
+   */
   public void removeData(FileSystem fs,  Path newExecutionOutput, Path destinationOutput)
           throws IOException {
     for (FileStatus partitionFile : fs.listStatus(newExecutionOutput, new DataPathFilter())) {
