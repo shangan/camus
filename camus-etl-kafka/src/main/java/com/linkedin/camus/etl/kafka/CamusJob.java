@@ -39,6 +39,11 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import com.meituan.camus.utils.DateHelper;
@@ -69,6 +74,10 @@ public class CamusJob extends Configured implements Tool {
   public static final String KAFKA_HOST_PORT = "kafka.host.port";
   public static final String KAFKA_TIMEOUT_VALUE = "kafka.timeout.value";
   public static final String LOG4J_CONFIGURATION = "log4j.configuration";
+  public static final String ETL_CURRENT_TIMESTAMP = "etl.current.timestamp";
+  public static final String PARALLEL_MOVE_DATA = "parallel.move.data";
+  public static final String TIME_WAIT_MOVE_DATA = "time.wait.move.data";
+  public static final String DEFAUT_TIME_WAIT_MOVE_DATA = "60000";
   private static org.apache.log4j.Logger log = Logger
     .getLogger(CamusJob.class);
 
@@ -184,6 +193,8 @@ public class CamusJob extends Configured implements Tool {
     // keep config consistent in global scope
     props.setProperty(ETL_EXECUTION_BASE_PATH, execBasePathStr);
     props.setProperty(ETL_EXECUTION_HISTORY_PATH, execHistoryStr);
+    props.setProperty(ETL_CURRENT_TIMESTAMP, String.valueOf(System.currentTimeMillis()));
+
 
     Job job = createJob(props);
     JobClient jobClient = new JobClient(job.getConfiguration());
@@ -314,7 +325,12 @@ public class CamusJob extends Configured implements Tool {
     stopTiming("total");
 
     if (job.isSuccessful()) {
-      removeData(fs, newExecutionOutput, getDestinationPath(job));
+      if (props.getProperty(PARALLEL_MOVE_DATA, "off").equalsIgnoreCase("on")) {
+        long timeWaitMoveData = Long.parseLong(props.getProperty(TIME_WAIT_MOVE_DATA, DEFAUT_TIME_WAIT_MOVE_DATA));
+        parallelMoveData(fs, newExecutionOutput, getDestinationPath(job), timeWaitMoveData);
+      } else {
+        removeData(fs, newExecutionOutput, getDestinationPath(job));
+      }
       fs.rename(newExecutionOutput, execHistory);
       createReport(job, timingMap);
     } else {
@@ -335,23 +351,94 @@ public class CamusJob extends Configured implements Tool {
     }
   }
 
-  public void removeData(FileSystem fs,  Path newExecutionOutput, Path destinationOutput)
-          throws IOException{
+  /**
+   * 功能：采用并发的方式将“执行目录”下的数据文件移动到“目标目录”下。
+   * newExecutionOutput /var/camus/offsets/horiginallog.test/2015-09-01-13-44-02
+   * destinationOutput /user/hive/warehouse/originallog.db/
+   *
+   * 例如：/var/camus/offsets/horiginallog.test/2015-09-01-13-44-02/
+   * testorg+dt=20150901+hour=13+testorg.57.0.32240.32809281.lzo
+   * 移动到：/user/hive/warehouse/originallog.db/
+   * testorg/dt=20150831/hour=14/testorg.57.0.19883.32777041.lzo
+   */
+  public void parallelMoveData(FileSystem fs, Path newExecutionOutput,
+                               Path destinationOutput, long timeWaitMoveData) throws Exception {
+
+    List<FutureTask<Boolean>> futureTasksList = new ArrayList<FutureTask<Boolean>>();
+    boolean isFirstPartitionFile = true;
     for (FileStatus partitionFile : fs.listStatus(newExecutionOutput,new DataPathFilter())) {
       String partition = partitionFile.getPath().getName();
       partition = partition.replace('+', '/');
-      for (FileStatus dataFile : fs.listStatus(partitionFile.getPath())) {
-        Path destDataFile = new Path(destinationOutput, partition + "/" + dataFile.getPath().getName());
+      Path destDataFile = new Path(destinationOutput, partition);
+
+      if (isFirstPartitionFile) {
         if (!fs.exists(destDataFile.getParent())) {
           fs.mkdirs(destDataFile.getParent());
         }
-        fs.rename(dataFile.getPath(), destDataFile);
+        fs.rename(partitionFile.getPath(), destDataFile);
+        isFirstPartitionFile = false;
+      }  else {
+        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new MoveDataTask(fs, partitionFile.getPath(), destDataFile));
+        futureTasksList.add(futureTask);
       }
+    }
 
+    int numThreads = futureTasksList.size();
+    ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+    for (FutureTask<Boolean> futureTask : futureTasksList) {
+      executor.submit(futureTask);
+    }
 
-      fs.delete(partitionFile.getPath(), false);
+    Thread.sleep(timeWaitMoveData);
+
+    try {
+      for (FutureTask<Boolean> futureTask : futureTasksList) {
+        if (!futureTask.get(1, TimeUnit.SECONDS)) {
+          throw new Exception("Failed to rename");
+        }
+      }
+    } finally {
+      executor.shutdownNow();
     }
   }
+
+  class MoveDataTask implements Callable<Boolean> {
+    private Path srcDataPath;
+    private Path destDataPath;
+    private FileSystem fs;
+
+    MoveDataTask(FileSystem fs, Path srcPath, Path destPath) {
+      this.srcDataPath = srcPath;
+      this.destDataPath = destPath;
+      this.fs = fs;
+    }
+
+    @Override
+    public Boolean call() throws Exception {
+      try {
+        fs.rename(srcDataPath, destDataPath);
+      } catch (IOException ie) {
+        log.error("failed rename " + srcDataPath + " to " + destDataPath, ie);
+        return false;
+      }
+      return true;
+    }
+  }
+
+  public void removeData(FileSystem fs,  Path newExecutionOutput, Path destinationOutput)
+          throws IOException {
+    for (FileStatus partitionFile : fs.listStatus(newExecutionOutput, new DataPathFilter())) {
+      String partition = partitionFile.getPath().getName();
+      partition = partition.replace('+', '/');
+      Path destDataFile = new Path(destinationOutput, partition);
+      if (!fs.exists(destDataFile.getParent())) {
+        fs.mkdirs(destDataFile.getParent());
+      }
+      fs.deleteOnExit(destDataFile);
+      fs.rename(partitionFile.getPath(), destDataFile);
+    }
+  }
+
 
   public void printErrors(FileSystem fs, Path newExecutionOutput)
     throws IOException {
@@ -702,7 +789,7 @@ public class CamusJob extends Configured implements Tool {
   public class DataPathFilter implements PathFilter {
     @Override
     public boolean accept(Path path) {
-      return Pattern.matches("([^+]+)\\+dt=(\\d+)\\+hour=(\\d+)", path.getName());
+      return Pattern.matches("([^+]+)\\+dt=(\\d+)\\+hour=(\\d+).+?", path.getName());
     }
   }
 
