@@ -76,7 +76,7 @@ public class CamusJob extends Configured implements Tool {
   public static final String LOG4J_CONFIGURATION = "log4j.configuration";
   public static final String PARALLEL_MOVE_DATA = "parallel.move.data";
   public static final String TIME_WAIT_MOVE_DATA = "time.wait.move.data";
-  public static final String DEFAUT_TIME_WAIT_MOVE_DATA = "60000";
+  public static final String DEFAUT_TIME_WAIT_MOVE_DATA = "300000";
   private static org.apache.log4j.Logger log = Logger
     .getLogger(CamusJob.class);
 
