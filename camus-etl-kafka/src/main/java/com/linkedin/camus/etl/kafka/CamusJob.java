@@ -74,7 +74,6 @@ public class CamusJob extends Configured implements Tool {
   public static final String KAFKA_HOST_PORT = "kafka.host.port";
   public static final String KAFKA_TIMEOUT_VALUE = "kafka.timeout.value";
   public static final String LOG4J_CONFIGURATION = "log4j.configuration";
-  public static final String ETL_CURRENT_TIMESTAMP = "etl.current.timestamp";
   public static final String PARALLEL_MOVE_DATA = "parallel.move.data";
   public static final String TIME_WAIT_MOVE_DATA = "time.wait.move.data";
   public static final String DEFAUT_TIME_WAIT_MOVE_DATA = "60000";
@@ -193,7 +192,7 @@ public class CamusJob extends Configured implements Tool {
     // keep config consistent in global scope
     props.setProperty(ETL_EXECUTION_BASE_PATH, execBasePathStr);
     props.setProperty(ETL_EXECUTION_HISTORY_PATH, execHistoryStr);
-    props.setProperty(ETL_CURRENT_TIMESTAMP, String.valueOf(System.currentTimeMillis()));
+    props.setProperty(com.meituan.camus.conf.Configuration.ETL_CURRENT_TIMESTAMP, String.valueOf(System.currentTimeMillis()));
 
 
     Job job = createJob(props);
@@ -327,9 +326,10 @@ public class CamusJob extends Configured implements Tool {
     if (job.isSuccessful()) {
       if (props.getProperty(PARALLEL_MOVE_DATA, "off").equalsIgnoreCase("on")) {
         long timeWaitMoveData = Long.parseLong(props.getProperty(TIME_WAIT_MOVE_DATA, DEFAUT_TIME_WAIT_MOVE_DATA));
+        log.info("timeWaitMoveData = " + timeWaitMoveData);
         parallelMoveData(fs, newExecutionOutput, getDestinationPath(job), timeWaitMoveData);
       } else {
-        removeData(fs, newExecutionOutput, getDestinationPath(job));
+        moveData(fs, newExecutionOutput, getDestinationPath(job));
       }
       fs.rename(newExecutionOutput, execHistory);
       createReport(job, timingMap);
@@ -384,21 +384,44 @@ public class CamusJob extends Configured implements Tool {
     }
 
     int numThreads = futureTasksList.size();
+    if (numThreads == 0) {
+      log.info("no data file needs to be moved");
+      return;
+    }
+
     ExecutorService executor = Executors.newFixedThreadPool(numThreads);
     for (FutureTask<Boolean> futureTask : futureTasksList) {
       executor.submit(futureTask);
     }
 
-    Thread.sleep(timeWaitMoveData);
+    boolean isFinish = true;
+    long beginTime = System.currentTimeMillis();
+    long endTime = beginTime + timeWaitMoveData;
 
-    try {
+    while (System.currentTimeMillis() < endTime) {
+      isFinish = true;
       for (FutureTask<Boolean> futureTask : futureTasksList) {
-        if (!futureTask.get(1, TimeUnit.SECONDS)) {
-          throw new Exception("Failed to rename");
+        try {
+          if (!futureTask.get(1, TimeUnit.SECONDS)) {
+            isFinish = false;
+          }
+
+        } catch (Exception e) {
+          log.error("Failed to run futureTask!");
+          isFinish = false;
+          break;
         }
       }
-    } finally {
-      executor.shutdownNow();
+      if (isFinish) {
+        break;
+      }
+    }
+
+    executor.shutdownNow();
+
+    if (!isFinish) {
+      log.error("failed to parallelMoveData!");
+      throw new Exception("failed to parallelMoveData!");
     }
   }
 
@@ -411,19 +434,23 @@ public class CamusJob extends Configured implements Tool {
       this.srcDataPath = srcPath;
       this.destDataPath = destPath;
       this.fs = fs;
+      log.debug("MoveDataTask: srcDataPath = " + srcDataPath.toString() + " destDataPath = " + destDataPath.toString());
     }
 
     @Override
-    public Boolean call() throws Exception {
+    public Boolean call() throws Exception{
       try {
-        fs.deleteOnExit(destDataPath);
+        fs.delete(destDataPath, false);
         fs.rename(srcDataPath, destDataPath);
-      } catch (IOException ie) {
-        log.error("failed rename " + srcDataPath + " to " + destDataPath, ie);
+      } catch (Exception e) {
+        log.error("failed rename " + srcDataPath + " to " + destDataPath, e);
         return false;
       }
       return true;
     }
+
+
+
   }
 
   /**
@@ -436,7 +463,7 @@ public class CamusJob extends Configured implements Tool {
    * 移动到：/user/hive/warehouse/originallog.db/
    * testorg/dt=20150831/hour=14/testorg.57.0.19883.32777041.lzo
    */
-  public void removeData(FileSystem fs,  Path newExecutionOutput, Path destinationOutput)
+  public void moveData(FileSystem fs,  Path newExecutionOutput, Path destinationOutput)
           throws IOException {
     for (FileStatus partitionFile : fs.listStatus(newExecutionOutput, new DataPathFilter())) {
       String partition = partitionFile.getPath().getName();
@@ -445,7 +472,7 @@ public class CamusJob extends Configured implements Tool {
       if (!fs.exists(destDataFile.getParent())) {
         fs.mkdirs(destDataFile.getParent());
       }
-      fs.deleteOnExit(destDataFile);
+      fs.delete(destDataFile, false);
       fs.rename(partitionFile.getPath(), destDataFile);
     }
   }
