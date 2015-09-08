@@ -419,6 +419,7 @@ public class CamusJob extends Configured implements Tool {
 
     executor.shutdownNow();
 
+    // 如果 isFinish == false 的话，job 处于半失败状态，会导致数据重复。
     if (!isFinish) {
       log.error("failed to parallelMoveData!");
       throw new Exception("failed to parallelMoveData!");
