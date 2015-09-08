@@ -69,7 +69,8 @@ public class Configuration {
   public static final String ETL_STARTTIME_ON = "etl.starttime.on";
   public static final String ETL_STARTTIME = "etl.starttime";
 
-  public static final long CURRENT_TIMESTAMP = System.currentTimeMillis();
+  public static final String ETL_CURRENT_TIMESTAMP = "etl.current.timestamp";
+
 
 
   public static final String ZABBIX_ITEM_COMMON_KEY = "camus.etl.failinfo";

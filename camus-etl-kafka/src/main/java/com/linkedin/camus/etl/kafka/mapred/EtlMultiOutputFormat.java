@@ -75,7 +75,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     throws IOException, InterruptedException {
     if (committer == null)
       committer = new EtlMultiOutputCommitter(getOutputPath(context), context);
-    granularityMs = getMonitorTimeGranularityMins(context) * 60000L;
+      granularityMs = getMonitorTimeGranularityMins(context) * 60000L;
     return new MultiEtlRecordWriter(context);
   }
 
@@ -424,8 +424,9 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
         getPartitioner(context, topic).generatePartitionedPath(context, topic, Integer.parseInt(leaderId),
           Integer.parseInt(partition), encodedPartition);
 
+      // 例如：testorg+dt=20150901+hour=13+testorg.57.0.32240.32809281.lzo
       return partitionedPath +
-        "/" + topic + "." + leaderId + "." + partition +
+        "+" + topic + "." + leaderId + "." + partition +
         "." + count +
         "." + offset + recordWriterProvider.getFilenameExtension(context);
     }
