@@ -71,6 +71,10 @@ public class Configuration {
 
   public static final String ETL_CURRENT_TIMESTAMP = "etl.current.timestamp";
 
+  public static final String ETL_PARALLEL_READOFFSETS = "etl.parallel.readoffsets";
+
+  public static final String ETL_READOFFSET_TIMEOUT = "etl,readoffsets.timeout";
+
 
 
   public static final String ZABBIX_ITEM_COMMON_KEY = "camus.etl.failinfo";
