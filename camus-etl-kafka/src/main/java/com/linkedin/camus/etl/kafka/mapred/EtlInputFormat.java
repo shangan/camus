@@ -31,6 +31,12 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 /**
@@ -426,8 +432,11 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     if (reload) {
       log.info("Etl reload, will not read previous offsets");
     } else {
-      offsetKeys = getPreviousOffsets(
-        FileInputFormat.getInputPaths(context), context);
+      if (context.getConfiguration().get(Configuration.ETL_PARALLEL_READOFFSETS, "off").equals("on")) {
+        offsetKeys = parallelGetPreviousOffsets(FileInputFormat.getInputPaths(context), context);
+      } else {
+        offsetKeys = getPreviousOffsets(FileInputFormat.getInputPaths(context), context);
+      }
     }
     Set<String> moveLatest = getMoveToLatestTopicsSet(context);
     Map<EtlRequest, EtlKey> existOffsetKeys = new HashMap<EtlRequest, EtlKey>();
@@ -667,6 +676,107 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
       writer.append(r, NullWritable.get());
     }
     writer.close();
+  }
+
+  class ReadEtlKeyTask implements Callable<List<EtlKey>> {
+    private FileSystem fs;
+    private Path offsetFile;
+    private JobContext context;
+
+    ReadEtlKeyTask(FileSystem fs, Path offsetFile, JobContext context) {
+      this.fs = fs;
+      this.offsetFile = offsetFile;
+      this.context = context;
+    }
+
+    public List<EtlKey> call() throws Exception {
+      log.info("previous offset file:" + offsetFile);
+      List<EtlKey> etlKeyArrayList= new ArrayList<EtlKey>();
+      SequenceFile.Reader reader = new SequenceFile.Reader(this.fs,
+        this.offsetFile, this.context.getConfiguration());
+
+      EtlKey key = new EtlKey();
+      while (reader.next(key, NullWritable.get())) {
+        etlKeyArrayList.add(key);
+        key = new EtlKey();
+      }
+      reader.close();
+
+      return etlKeyArrayList;
+    }
+  }
+
+
+  private Map<EtlRequest, EtlKey> parallelGetPreviousOffsets(Path[] inputs,
+                                                     JobContext context) throws IOException {
+    Map<EtlRequest, EtlKey> offsetKeysMap = new HashMap<EtlRequest, EtlKey>();
+
+    List<FutureTask<List<EtlKey>>> futureTasks = new ArrayList<FutureTask<List<EtlKey>>>();
+    for (Path input : inputs) {
+      FileSystem fs = input.getFileSystem(context.getConfiguration());
+      for (FileStatus f : fs.listStatus(input, new OffsetFileFilter())) {
+        FutureTask<List<EtlKey>> futureTask = new FutureTask<List<EtlKey>>(new ReadEtlKeyTask(fs, f.getPath(), context));
+        futureTasks.add(futureTask);
+      }
+    }
+
+    int numThreads = futureTasks.size();
+    log.info("futureTasks.size = " + numThreads);
+    ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+    for (FutureTask<List<EtlKey>> futureTask : futureTasks) {
+      executor.submit(futureTask);
+    }
+
+    List<EtlKey> etlKeyList = new ArrayList<EtlKey>();
+    List<EtlKey> tmpEtlKey;
+    long beginTime = System.currentTimeMillis();
+    long waitReadTimeOut = context.getConfiguration().getLong(Configuration.ETL_READOFFSET_TIMEOUT, 60000);
+    long endTime = beginTime + waitReadTimeOut;
+    boolean isSuccess = true;
+    while (System.currentTimeMillis() < endTime) {
+      isSuccess = true;
+      etlKeyList.clear();
+      try {
+        for (FutureTask<List<EtlKey>> futureTask : futureTasks) {
+          tmpEtlKey = futureTask.get(1, TimeUnit.SECONDS);
+          etlKeyList.addAll(tmpEtlKey);
+        }
+      } catch (TimeoutException e) {
+        isSuccess = false;
+      } catch (Exception e) {
+        isSuccess = false;
+        log.error("failed to get task", e);
+        break;
+      }
+
+      if (isSuccess) {
+        break;
+      }
+    }
+
+    executor.shutdownNow();
+
+    if (!isSuccess) {
+      throw new IOException("failed to read offsets.");
+    }
+
+    for (EtlKey key : etlKeyList) {
+      EtlRequest request = new EtlRequest(context,
+        key.getTopic(), key.getLeaderId(),
+        key.getPartition());
+      if (offsetKeysMap.containsKey(request)) {
+
+        EtlKey oldKey = offsetKeysMap.get(request);
+        if (oldKey.getOffset() < key.getOffset()) {
+          offsetKeysMap.put(request, key);
+        }
+      } else {
+        offsetKeysMap.put(request, key);
+      }
+    }
+
+    return offsetKeysMap;
+
   }
 
   private Map<EtlRequest, EtlKey> getPreviousOffsets(Path[] inputs,
