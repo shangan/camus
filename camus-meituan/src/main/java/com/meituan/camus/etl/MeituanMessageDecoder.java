@@ -4,7 +4,7 @@ import com.linkedin.camus.coders.MessageDecoder;
 import com.meituan.camus.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import java.util.Calendar;
+import java.util.Date;
 import java.util.Properties;
 
 /**
@@ -25,8 +25,10 @@ public abstract class MeituanMessageDecoder extends MessageDecoder<byte[], Strin
       props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS, "3600000"));
     int ignoreMin = Integer.valueOf(
       props.getProperty(Configuration.CAMUS_MESSAGE_DELTA_MILLIS_IGNORE_MIN, "60"));
-    Calendar calendar = Calendar.getInstance();
-    int minute = calendar.get(Calendar.MINUTE);
+    logger.info("etl_current_timestamp = " + beginTimeMillis);
+    Date beginDate = new Date(beginTimeMillis);
+    int minute = beginDate.getMinutes();
+    logger.info("beginDate = " + beginDate + " minute=" + minute);
     if (minute > ignoreMin) {
       ignoreDeltaMillis = true;
     }
