@@ -33,14 +33,6 @@
       <source>target/camus.properties</source>
     </file>
   </files>
-
-  <fileSets>
-    <fileSet>
-      <includes>
-        <include>/conf/**</include>
-      </includes>
-    </fileSet>
-  </fileSets>
   <!-- outputDirectory does not work??
   <fileSets>
     <fileSet>
