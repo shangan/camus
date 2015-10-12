@@ -24,7 +24,23 @@
       <outputDirectory>/</outputDirectory>
       <source>target/camus-etl-kafka-${project.version}-shade.jar</source>
     </file>
+    <file>
+      <outputDirectory>/</outputDirectory>
+      <source>target/log4j.properties</source>
+    </file>
+    <file>
+      <outputDirectory>/</outputDirectory>
+      <source>target/camus.properties</source>
+    </file>
   </files>
+
+  <fileSets>
+    <fileSet>
+      <includes>
+        <include>/conf/**</include>
+      </includes>
+    </fileSet>
+  </fileSets>
   <!-- outputDirectory does not work??
   <fileSets>
     <fileSet>
