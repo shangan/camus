@@ -16,7 +16,7 @@ target
 **/.settings/
 .settings/*
 *.jar
-**/bin/
+#**/bin/
 **/test-output/
 **/.idea
 .idea
