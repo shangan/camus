@@ -332,21 +332,21 @@ public class CamusJob extends Configured implements Tool {
         moveData(fs, newExecutionOutput, getDestinationPath(job));
       }
       fs.rename(newExecutionOutput, execHistory);
-      createReport(job, timingMap);
+      //createReport(job, timingMap);
     } else {
-      JobClient client = new JobClient(
-        new JobConf(job.getConfiguration()));
-
-      TaskCompletionEvent[] tasks = job.getTaskCompletionEvents(0);
-
-      for (TaskReport task : client.getMapTaskReports(tasks[0]
-        .getTaskAttemptId().getJobID())) {
-        if (task.getCurrentStatus().equals(TIPStatus.FAILED)) {
-          for (String s : task.getDiagnostics()) {
-            System.out.println("task error: " + s);
-          }
-        }
-      }
+//      JobClient client = new JobClient(
+//        new JobConf(job.getConfiguration()));
+//
+//      TaskCompletionEvent[] tasks = job.getTaskCompletionEvents(0);
+//
+//      for (TaskReport task : client.getMapTaskReports(tasks[0]
+//        .getTaskAttemptId().getJobID())) {
+//        if (task.getCurrentStatus().equals(TIPStatus.FAILED)) {
+//          for (String s : task.getDiagnostics()) {
+//            System.out.println("task error: " + s);
+//          }
+//        }
+//      }
       throw new RuntimeException("hadoop job failed");
     }
   }
