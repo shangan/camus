@@ -198,10 +198,12 @@ public class CamusJob extends Configured implements Tool {
     Job job = createJob(props);
     JobClient jobClient = new JobClient(job.getConfiguration());
     JobStatus[] jobList = jobClient.getJobsFromQueue(job.getConfiguration().get("mapreduce.job.queuename"));
-    for (JobStatus crtJob : jobList) {
-      if (crtJob.getJobName().equals(job.getJobName()) && (!crtJob.isJobComplete())) {
-        log.error(String.format("The job[%s] has not finished, please check", job.getJobName()));
-        System.exit(-1);
+    if (jobList != null) {
+      for (JobStatus crtJob : jobList) {
+        if (crtJob.getJobName().equals(job.getJobName()) && (!crtJob.isJobComplete())) {
+          log.error(String.format("The job[%s] has not finished, please check", job.getJobName()));
+          System.exit(-1);
+        }
       }
     }
     if (getLog4jConfigure(job)) {
