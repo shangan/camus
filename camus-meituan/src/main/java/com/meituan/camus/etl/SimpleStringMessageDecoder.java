@@ -32,6 +32,9 @@ public class SimpleStringMessageDecoder extends MeituanMessageDecoder {
   public CamusWrapper<String> decode(byte[] payload) {
 
     String payloadString = new String(payload);
+    if (!payloadString.endsWith("\n")) {
+      payloadString += "\n";
+    }
     long timestamp = beginTimeMillis;
     if (!ignoreDeltaMillis) {
       timestamp -= DELTA_MILLIS;
